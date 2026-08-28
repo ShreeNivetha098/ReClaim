@@ -121,18 +121,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Email Field
                   CustomTextField(
                     label: 'Institutional Email',
-                    hint: 'student@reclaim.edu',
+                    hint: 'student@psgtech.ac.in',
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: const Icon(Icons.email_outlined),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email address';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
+                      final email = value?.trim().toLowerCase() ?? '';
+
+                        if (email.isEmpty) {
+                          return 'Please enter your email address';
+                        }
+
+                        if (!email.endsWith('@psgtech.ac.in')) {
+                          return 'Please use your PSG Tech email (@psgtech.ac.in)';
+                        }
+
+                        return null;
                     },
                   ),
                   const SizedBox(height: 16),
