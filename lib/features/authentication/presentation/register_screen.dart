@@ -143,15 +143,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Institutional Email
                 CustomTextField(
                   label: 'Institutional Email',
-                  hint: 'ananya@reclaim.edu',
+                  hint: 'student@psgtech.ac.in',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Please enter your email';
-                    if (!val.contains('@')) return 'Enter a valid email address';
-                    return null;
-                  },
+                   final email = val?.trim().toLowerCase() ?? '';
+
+                   if (email.isEmpty) {
+                     return 'Please enter your email';
+                   }
+
+                   if (!email.endsWith('@psgtech.ac.in')) {
+                     return 'Please use your PSG Tech email (@psgtech.ac.in)';
+                   }
+
+                   return null;
+                    },
                 ),
                 const SizedBox(height: 16),
 
