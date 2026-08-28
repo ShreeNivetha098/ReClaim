@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Lost Items Collection
+    match /lostItems/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Found Items Collection
+    match /foundItems/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.finderId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.finderId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.finderId == request.auth.uid || isAdmin());
+    }
+
+    // Claims Collection
+    match /claims/{claimId} {
+      allow read: if isAuthenticated() && (resource.data.claimantId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.claimantId == request.auth.uid;
+      // Users cannot approve their own claims - only Admins can update claim status to APPROVED/REJECTED
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Chats Collection
+    match /chats/{chatId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid in resource.data.participantIds || isAdmin());
+    }
+
+    // Messages Collection
+    match /messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
