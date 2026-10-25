@@ -43,6 +43,9 @@ abstract class AppColors {
   static const Color statusClaimedBg = Color(0xFFE0E7FF);
   static const Color statusClaimedText = Color(0xFF3730A3);
 
+  static const Color statusUnclaimedBg = Color(0xFFFFF7ED);
+  static const Color statusUnclaimedText = Color(0xFFC2410C);
+
   static const Color statusReturnedBg = Color(0xFFD1FAE5);
   static const Color statusReturnedText = Color(0xFF065F46);
 

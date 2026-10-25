@@ -22,10 +22,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final lostItemsAsync = ref.watch(lostItemsProvider);
-    final foundItemsAsync = ref.watch(foundItemsProvider);
+    final lostItemsAsync = ref.watch(activeLostItemsProvider);
+    final foundItemsAsync = ref.watch(activeFoundItemsProvider);
+    // Full providers needed for refresh and matching
+    final allLostItemsAsync = ref.watch(lostItemsProvider);
 
     final isAdmin = user?.role.toLowerCase() == 'admin';
+    final unreadNotifsCount = ref.watch(unreadNotificationsCountProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +74,12 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
+            icon: unreadNotifsCount > 0
+                ? Badge.count(
+                    count: unreadNotifsCount,
+                    child: const Icon(Icons.notifications_none_rounded),
+                  )
+                : const Icon(Icons.notifications_none_rounded),
             onPressed: onNavigateToNotifications,
           ),
         ],
@@ -212,7 +220,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Potential Match Smart Notification Card
-              _buildPotentialMatchBanner(context, ref, lostItemsAsync),
+              _buildPotentialMatchBanner(context, ref, allLostItemsAsync),
 
               const SizedBox(height: 24),
 
@@ -249,7 +257,7 @@ class HomeScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.72,
+                      childAspectRatio: 0.65,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -261,9 +269,11 @@ class HomeScreen extends ConsumerWidget {
                         category: item.category,
                         location: item.locationLost,
                         date: item.dateLost,
+                        createdAt: item.createdAt,
                         imageUrl: item.imageUrl,
                         status: item.status,
                         isLost: true,
+                        reporterName: item.reporterName,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -314,7 +324,7 @@ class HomeScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.72,
+                      childAspectRatio: 0.65,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -326,9 +336,11 @@ class HomeScreen extends ConsumerWidget {
                         category: item.category,
                         location: item.locationFound,
                         date: item.dateFound,
+                        createdAt: item.createdAt,
                         imageUrl: item.imageUrl,
                         status: item.status,
                         isLost: false,
+                        reporterName: item.reporterName,
                         onTap: () {
                           Navigator.push(
                             context,

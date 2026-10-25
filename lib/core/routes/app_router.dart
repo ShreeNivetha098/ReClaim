@@ -1,13 +1,48 @@
 import 'package:go_router/go_router.dart';
 import 'app_routes.dart';
+import '../services/firebase_service.dart';
+import '../services/reclaim_repository.dart';
 import '../../features/authentication/presentation/splash_screen.dart';
 import '../../features/authentication/presentation/login_screen.dart';
 import '../../features/authentication/presentation/register_screen.dart';
 import '../../features/authentication/presentation/forgot_password_screen.dart';
 import '../../features/home/presentation/main_navigation_screen.dart';
+import '../../features/admin/presentation/admin_login_screen.dart';
+import '../../features/admin/presentation/admin_shell_screen.dart';
+import '../../features/admin/presentation/pages/admin_overview_page.dart';
+import '../../features/admin/presentation/pages/admin_users_page.dart';
+import '../../features/admin/presentation/pages/admin_reports_page.dart';
+import '../../features/admin/presentation/pages/admin_claims_page.dart';
+import '../../features/admin/presentation/pages/admin_unclaimed_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
+  redirect: (context, state) {
+    final path = state.uri.toString();
+    final isNavigatingToAdmin = path.startsWith('/admin');
+    final isNavigatingToAdminLogin = path == AppRoutes.adminLogin;
+
+    if (isNavigatingToAdmin && !isNavigatingToAdminLogin) {
+      final firebaseUser = FirebaseService.isInitialized ? FirebaseService.auth.currentUser : null;
+      final cachedUser = ReClaimRepository.currentSharedUser;
+
+      final isAuthenticated = firebaseUser != null || cachedUser != null;
+      final isAdmin = cachedUser?.role.trim().toLowerCase() == 'admin';
+
+      if (!isAuthenticated || !isAdmin) {
+        return AppRoutes.adminLogin;
+      }
+    }
+
+    if (isNavigatingToAdminLogin) {
+      final cachedUser = ReClaimRepository.currentSharedUser;
+      if (cachedUser != null && cachedUser.role.trim().toLowerCase() == 'admin') {
+        return AppRoutes.adminOverview;
+      }
+    }
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: AppRoutes.splash,
@@ -36,6 +71,59 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.profile,
       builder: (context, state) => const MainNavigationScreen(initialIndex: 4),
+    ),
+
+    // Admin Authentication Route
+    GoRoute(
+      path: AppRoutes.adminLogin,
+      builder: (context, state) => const AdminLoginScreen(),
+    ),
+
+    // Admin Dashboard Shell Route
+    ShellRoute(
+      builder: (context, state, child) => AdminShellScreen(child: child),
+      routes: [
+        GoRoute(
+          path: AppRoutes.adminDashboard,
+          builder: (context, state) => const AdminOverviewPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminOverview,
+          builder: (context, state) => const AdminOverviewPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminUsers,
+          builder: (context, state) => const AdminUsersPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminLostReports,
+          builder: (context, state) => const AdminReportsPage(initialTabIndex: 0),
+        ),
+        GoRoute(
+          path: AppRoutes.adminFoundReports,
+          builder: (context, state) => const AdminReportsPage(initialTabIndex: 1),
+        ),
+        GoRoute(
+          path: AppRoutes.adminClaims,
+          builder: (context, state) => const AdminClaimsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminClaimed,
+          builder: (context, state) => const AdminClaimsPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminUnclaimed,
+          builder: (context, state) => const AdminUnclaimedPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminActivity,
+          builder: (context, state) => const AdminOverviewPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminAnalytics,
+          builder: (context, state) => const AdminOverviewPage(),
+        ),
+      ],
     ),
   ],
 );

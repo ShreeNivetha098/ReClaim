@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
 
 /// Utilities for standard date and time formatting throughout ReClaim
 abstract class DateFormatter {
@@ -33,5 +34,56 @@ abstract class DateFormatter {
     } else {
       return 'Just now';
     }
+  }
+
+  /// Calculates the days remaining before reaching the 30-day unclaimed deadline.
+  /// Uses [createdAt] and the configured [AppConstants.unclaimedAfterDays].
+  /// Returns 0 if the deadline has passed.
+  static int daysRemainingUntilUnclaimed(DateTime createdAt, [DateTime? now]) {
+    final currentTime = now ?? DateTime.now();
+    final deadline = createdAt.add(
+      const Duration(days: AppConstants.unclaimedAfterDays),
+    );
+    if (!currentTime.isBefore(deadline)) {
+      return 0;
+    }
+    final difference = deadline.difference(currentTime);
+    final days = (difference.inSeconds / 86400.0).ceil();
+    if (days <= 0) return 0;
+    if (days > AppConstants.unclaimedAfterDays) {
+      return AppConstants.unclaimedAfterDays;
+    }
+    return days;
+  }
+
+  /// Returns the unclaimed deadline label (e.g., "18 days left" or "Unclaimed period expired").
+  /// Returns null for statuses where the countdown is not applicable (CLAIMED, RETURNED, CLOSED).
+  static String? getUnclaimedCountdownLabel(
+    DateTime createdAt,
+    String status, [
+    DateTime? now,
+  ]) {
+    final upper = status.toUpperCase();
+
+    // Claimed, returned, and closed reports must not show an active countdown
+    if (upper == AppConstants.statusClaimed ||
+        upper == AppConstants.statusReturned ||
+        upper == AppConstants.statusClosed) {
+      return null;
+    }
+
+    if (upper == AppConstants.statusUnclaimed) {
+      return 'Unclaimed period expired';
+    }
+
+    if (upper == AppConstants.statusActive) {
+      final days = daysRemainingUntilUnclaimed(createdAt, now);
+      if (days <= 0) {
+        return 'Unclaimed period expired';
+      }
+      return '$days ${days == 1 ? 'day' : 'days'} left';
+    }
+
+    return null;
   }
 }

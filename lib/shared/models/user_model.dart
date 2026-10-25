@@ -35,7 +35,7 @@ class UserModel {
       phone: map['phone'] ?? '',
       department: map['department'] ?? '',
       rollNumber: map['rollNumber'] ?? '',
-      role: map['role'] ?? 'Student',
+      role: (map['role']?.toString().trim()) ?? (map['Role']?.toString().trim()) ?? 'Student',
       profileImage: map['profileImage'],
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()

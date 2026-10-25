@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../shared/models/user_model.dart';
 import '../../shared/models/lost_item_model.dart';
@@ -11,12 +13,12 @@ import '../../shared/models/chat_message_model.dart';
 import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/notification_model.dart';
 import 'firebase_service.dart';
+import '../constants/app_constants.dart';
 
 class ReClaimRepository {
   static const _uuid = Uuid();
 
   // In-Memory state fallback when live Firebase configuration is pending
-  UserModel? _currentUser;
   final List<UserModel> _mockUsers = [];
   final List<LostItemModel> _mockLostItems = [];
   final List<FoundItemModel> _mockFoundItems = [];
@@ -24,6 +26,16 @@ class ReClaimRepository {
   final List<ChatRoomModel> _mockChatRooms = [];
   final List<ChatMessageModel> _mockMessages = [];
   final List<NotificationModel> _mockNotifications = [];
+  final StreamController<List<NotificationModel>> _mockNotifController =
+      StreamController<List<NotificationModel>>.broadcast();
+
+  static UserModel? currentSharedUser;
+
+  UserModel? _currentUser;
+  set currentUser(UserModel? u) {
+    _currentUser = u;
+    currentSharedUser = u;
+  }
 
   ReClaimRepository() {
     _seedInitialData();
@@ -42,14 +54,15 @@ class ReClaimRepository {
               .get();
           if (doc.exists && doc.data() != null) {
             final user = UserModel.fromMap(doc.data()!, doc.id);
-            _currentUser = user;
+            currentUser = user;
+            _syncActiveUser(user);
             return user;
           }
         } catch (e) {
           debugPrint('Error fetching current user profile: $e');
         }
       }
-      _currentUser = null;
+      currentUser = null;
       return null;
     }
     return _currentUser;
@@ -91,7 +104,8 @@ class ReClaimRepository {
       );
 
       await FirebaseService.firestore.collection('users').doc(uid).set(newUser.toMap());
-      _currentUser = newUser;
+      currentUser = newUser;
+      _syncActiveUser(newUser);
       return newUser;
     }
 
@@ -111,7 +125,7 @@ class ReClaimRepository {
     );
 
     _mockUsers.add(newUser);
-    _currentUser = newUser;
+    currentUser = newUser;
     return newUser;
   }
 
@@ -126,9 +140,16 @@ class ReClaimRepository {
       );
 
       final doc = await FirebaseService.firestore.collection('users').doc(credential.user!.uid).get();
+      debugPrint('ReClaimRepository.loginUser: auth UID=${credential.user!.uid}');
+      debugPrint('ReClaimRepository.loginUser: Firestore path=users/${credential.user!.uid}, exists=${doc.exists}');
       if (doc.exists && doc.data() != null) {
-        final user = UserModel.fromMap(doc.data()!, doc.id);
-        _currentUser = user;
+        final data = doc.data()!;
+        debugPrint('ReClaimRepository.loginUser: raw data role="${data['role']}"');
+        debugPrint('ReClaimRepository.loginUser: raw data Role="${data['Role']}"');
+        final user = UserModel.fromMap(data, doc.id);
+        debugPrint('ReClaimRepository.loginUser: parsed UserModel role="${user.role}"');
+        currentUser = user;
+        _syncActiveUser(user);
         return user;
       } else {
         throw Exception('User profile not found in Firestore.');
@@ -151,7 +172,7 @@ class ReClaimRepository {
       ),
     );
 
-    _currentUser = found;
+    currentUser = found;
     return found;
   }
 
@@ -159,7 +180,7 @@ class ReClaimRepository {
     if (FirebaseService.isInitialized) {
       await FirebaseService.auth.signOut();
     }
-    _currentUser = null;
+    currentUser = null;
   }
 
   Future<void> resetPassword(String email) async {
@@ -169,13 +190,14 @@ class ReClaimRepository {
   }
 
   Future<void> updateUserProfile(UserModel updatedUser) async {
-    _currentUser = updatedUser;
+    currentUser = updatedUser;
     if (FirebaseService.isInitialized) {
       try {
         await FirebaseService.firestore
             .collection('users')
             .doc(updatedUser.uid)
             .update(updatedUser.toMap());
+        _syncActiveUser(updatedUser);
       } catch (e) {
         debugPrint('Update profile error: $e');
       }
@@ -191,19 +213,45 @@ class ReClaimRepository {
   // IMAGE UPLOAD
   // ---------------------------------------------------------------------------
 
-  Future<String?> uploadImage(File file, String folderPath) async {
+  Future<String?> uploadImageBytes(
+    Uint8List bytes,
+    String folderPath, {
+    String? fileName,
+    String? contentType,
+  }) async {
     if (FirebaseService.isInitialized) {
       try {
-        final fileName = '${_uuid.v4()}.jpg';
-        final ref = FirebaseService.storage.ref().child('$folderPath/$fileName');
-        final uploadTask = await ref.putFile(file);
-        return await uploadTask.ref.getDownloadURL();
-      } catch (e) {
-        debugPrint('Storage Upload Warning: $e');
+        final name = fileName ?? '${_uuid.v4()}.jpg';
+        final ref = FirebaseService.storage.ref().child('$folderPath/$name');
+        debugPrint('--- UPLOAD DIAGNOSTICS ---');
+        debugPrint('Bucket: ${FirebaseService.storage.bucket}');
+        debugPrint('Ref fullPath: ${ref.fullPath}');
+        debugPrint('Bytes length: ${bytes.length}');
+        debugPrint('Folder path: $folderPath');
+        debugPrint('File name: $name');
+        final metadata = SettableMetadata(
+          contentType: contentType ?? 'image/jpeg',
+        );
+        debugPrint('Starting putData...');
+        final uploadTask = await ref.putData(bytes, metadata);
+        debugPrint('putData finished successfully. Bytes transferred: ${uploadTask.bytesTransferred}');
+        debugPrint('Starting getDownloadURL...');
+        final downloadUrl = await uploadTask.ref.getDownloadURL();
+        debugPrint('getDownloadURL finished successfully. URL: $downloadUrl');
+        return downloadUrl;
+      } catch (e, stackTrace) {
+        debugPrint('Firebase Storage Upload Error: $e');
+        debugPrint('Stack trace: $stackTrace');
+        rethrow;
       }
     }
-    // Return sample visual image placeholder for immediate demo test
+    // Fallback for local mock testing when Firebase is not initialized
     return 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80';
+  }
+
+  Future<String?> uploadImage(File file, String folderPath) async {
+    final bytes = await file.readAsBytes();
+    return uploadImageBytes(bytes, folderPath);
   }
 
   // ---------------------------------------------------------------------------
@@ -217,11 +265,13 @@ class ReClaimRepository {
             .collection('lostItems')
             .orderBy('createdAt', descending: true)
             .get();
-        return snap.docs.map((doc) => LostItemModel.fromMap(doc.data(), doc.id)).toList();
+        final items = snap.docs.map((doc) => LostItemModel.fromMap(doc.data(), doc.id)).toList();
+        return _autoClassifyLostItems(items);
       } catch (e) {
         debugPrint('Firestore getLostItems error: $e');
       }
     }
+    _autoClassifyMockLostItems();
     return List.unmodifiable(_mockLostItems);
   }
 
@@ -240,6 +290,25 @@ class ReClaimRepository {
     }
 
     _mockLostItems.insert(0, newItem);
+
+    // Common notification dispatch after successful report creation
+    try {
+      await _dispatchCommonNotification(
+        title: 'New Lost Item Reported',
+        body: _buildNotificationMessage(
+          itemName: newItem.itemName,
+          colour: newItem.colour,
+          location: newItem.locationLost,
+          isLost: true,
+        ),
+        itemId: newItem.id,
+        itemType: 'LOST',
+        reporterId: newItem.ownerId,
+      );
+    } catch (notificationError) {
+      debugPrint('Notification creation failed for lost item ${newItem.id}: $notificationError');
+    }
+
     return newItem;
   }
 
@@ -286,11 +355,13 @@ class ReClaimRepository {
             .collection('foundItems')
             .orderBy('createdAt', descending: true)
             .get();
-        return snap.docs.map((doc) => FoundItemModel.fromMap(doc.data(), doc.id)).toList();
+        final items = snap.docs.map((doc) => FoundItemModel.fromMap(doc.data(), doc.id)).toList();
+        return _autoClassifyFoundItems(items);
       } catch (e) {
         debugPrint('Firestore getFoundItems error: $e');
       }
     }
+    _autoClassifyMockFoundItems();
     return List.unmodifiable(_mockFoundItems);
   }
 
@@ -302,17 +373,32 @@ class ReClaimRepository {
     );
 
     if (FirebaseService.isInitialized) {
-      try {
-        await FirebaseService.firestore
-            .collection('foundItems')
-            .doc(newItem.id)
-            .set(newItem.toMap());
-      } catch (e) {
-        debugPrint('Create Found Item error: $e');
-      }
+      await FirebaseService.firestore
+          .collection('foundItems')
+          .doc(newItem.id)
+          .set(newItem.toMap());
     }
 
     _mockFoundItems.insert(0, newItem);
+
+    // Common notification dispatch after successful report creation
+    try {
+      await _dispatchCommonNotification(
+        title: 'New Found Item Reported',
+        body: _buildNotificationMessage(
+          itemName: newItem.itemName,
+          colour: newItem.colour,
+          location: newItem.locationFound,
+          isLost: false,
+        ),
+        itemId: newItem.id,
+        itemType: 'FOUND',
+        reporterId: newItem.finderId,
+      );
+    } catch (notificationError) {
+      debugPrint('Notification creation failed for found item ${newItem.id}: $notificationError');
+    }
+
     return newItem;
   }
 
@@ -404,37 +490,98 @@ class ReClaimRepository {
     return List.unmodifiable(_mockClaims);
   }
 
-  Future<void> updateClaimStatus(String claimId, String newStatus) async {
-    if (FirebaseService.isInitialized) {
-      try {
-        await FirebaseService.firestore.collection('claims').doc(claimId).update({
-          'status': newStatus,
-          'updatedAt': Timestamp.fromDate(DateTime.now()),
+Future<void> updateClaimStatus(String claimId, String newStatus) async {
+  final normalizedStatus = newStatus.toUpperCase();
+  final now = DateTime.now();
+
+  if (FirebaseService.isInitialized) {
+    // Read the actual claim from Firestore. Do not depend on _mockClaims.
+    final claimRef =
+        FirebaseService.firestore.collection('claims').doc(claimId);
+
+    final claimSnapshot = await claimRef.get();
+
+    if (!claimSnapshot.exists || claimSnapshot.data() == null) {
+      throw StateError('Claim not found: $claimId');
+    }
+
+    final claim = ClaimModel.fromMap(
+      claimSnapshot.data()!,
+      claimSnapshot.id,
+    );
+
+    // Update the claim and linked item records together.
+    // If any write fails, Firestore will not partially apply the batch.
+    final batch = FirebaseService.firestore.batch();
+
+    batch.update(claimRef, {
+      'status': normalizedStatus,
+      'updatedAt': Timestamp.fromDate(now),
+    });
+
+    if (normalizedStatus == 'APPROVED') {
+      if (claim.lostItemId.isNotEmpty) {
+        final lostItemRef = FirebaseService.firestore
+            .collection('lostItems')
+            .doc(claim.lostItemId);
+
+        batch.update(lostItemRef, {
+          'status': 'CLAIMED',
+          'updatedAt': Timestamp.fromDate(now),
         });
-      } catch (e) {
-        debugPrint('Update Claim Status error: $e');
+      }
+
+      if (claim.foundItemId.isNotEmpty) {
+        final foundItemRef = FirebaseService.firestore
+            .collection('foundItems')
+            .doc(claim.foundItemId);
+
+        batch.update(foundItemRef, {
+          'status': 'CLAIMED',
+          'updatedAt': Timestamp.fromDate(now),
+        });
       }
     }
 
+    // Let errors propagate instead of showing a false success message.
+    await batch.commit();
+
+    // Keep the in-memory cache consistent, if this claim is cached.
     final index = _mockClaims.indexWhere((c) => c.id == claimId);
     if (index != -1) {
-      final updated = _mockClaims[index].copyWith(
-        status: newStatus,
-        updatedAt: DateTime.now(),
+      _mockClaims[index] = _mockClaims[index].copyWith(
+        status: normalizedStatus,
+        updatedAt: now,
       );
-      _mockClaims[index] = updated;
+    }
 
-      // Update associated lost and found items status if approved
-      if (newStatus == 'APPROVED') {
-        if (updated.lostItemId.isNotEmpty) {
-          await updateLostItemStatus(updated.lostItemId, 'CLAIMED');
-        }
-        if (updated.foundItemId.isNotEmpty) {
-          await updateFoundItemStatus(updated.foundItemId, 'CLAIMED');
-        }
-      }
+    return;
+  }
+
+  // Local/mock mode when Firebase is not initialized.
+  final index = _mockClaims.indexWhere((c) => c.id == claimId);
+
+  if (index == -1) {
+    throw StateError('Claim not found: $claimId');
+  }
+
+  final updatedClaim = _mockClaims[index].copyWith(
+    status: normalizedStatus,
+    updatedAt: now,
+  );
+
+  _mockClaims[index] = updatedClaim;
+
+  if (normalizedStatus == 'APPROVED') {
+    if (updatedClaim.lostItemId.isNotEmpty) {
+      await updateLostItemStatus(updatedClaim.lostItemId, 'CLAIMED');
+    }
+
+    if (updatedClaim.foundItemId.isNotEmpty) {
+      await updateFoundItemStatus(updatedClaim.foundItemId, 'CLAIMED');
     }
   }
+}
 
   // ---------------------------------------------------------------------------
   // CHAT & NOTIFICATIONS
@@ -452,16 +599,388 @@ class ReClaimRepository {
     _mockMessages.add(message);
   }
 
+  void _notifyMockNotificationsChanged() {
+    if (!_mockNotifController.isClosed) {
+      _mockNotifController.add(List.unmodifiable(_mockNotifications));
+    }
+  }
+
+  String _buildNotificationMessage({
+    required String itemName,
+    required String? colour,
+    required String location,
+    required bool isLost,
+  }) {
+    final cleanItem = itemName.trim();
+    final cleanColour = (colour ?? '').trim();
+    final cleanLoc = location.trim();
+
+    String itemPhrase = cleanItem;
+    if (cleanColour.isNotEmpty &&
+        cleanColour.toLowerCase() != 'n/a' &&
+        cleanColour.toLowerCase() != 'unknown') {
+      if (!cleanItem.toLowerCase().contains(cleanColour.toLowerCase())) {
+        itemPhrase = '$cleanColour $cleanItem';
+      }
+    }
+
+    if (isLost) {
+      if (cleanLoc.isNotEmpty && cleanLoc.toLowerCase() != 'n/a') {
+        return '$itemPhrase was reported near $cleanLoc.';
+      } else {
+        return '$itemPhrase was reported lost on campus.';
+      }
+    } else {
+      if (cleanLoc.isNotEmpty && cleanLoc.toLowerCase() != 'n/a') {
+        return '$itemPhrase was found near $cleanLoc.';
+      } else {
+        return '$itemPhrase was found on campus.';
+      }
+    }
+  }
+
+  Future<void> _syncActiveUser(UserModel user) async {
+    if (FirebaseService.isInitialized && user.uid.isNotEmpty) {
+      try {
+        await FirebaseService.firestore
+            .collection('active_users')
+            .doc(user.uid)
+            .set({
+          'uid': user.uid,
+          'isActive': user.isActive,
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        }, SetOptions(merge: true));
+      } catch (e) {
+        debugPrint('ReClaimRepository._syncActiveUser error: $e');
+      }
+    }
+  }
+
+  Future<List<UserModel>> getActiveUsers() async {
+    if (FirebaseService.isInitialized) {
+      try {
+        final activeSnap = await FirebaseService.firestore
+            .collection('active_users')
+            .where('isActive', isEqualTo: true)
+            .get();
+        if (activeSnap.docs.isNotEmpty) {
+          return activeSnap.docs.map((doc) {
+            final data = doc.data();
+            return UserModel(
+              uid: doc.id,
+              name: '',
+              email: '',
+              phone: '',
+              department: '',
+              rollNumber: '',
+              role: 'Student',
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              isActive: data['isActive'] ?? true,
+            );
+          }).toList();
+        }
+      } catch (e) {
+        debugPrint('ReClaimRepository.getActiveUsers (active_users) error: $e');
+      }
+
+      // Fallback: Check direct users collection if accessible
+      try {
+        final snap = await FirebaseService.firestore.collection('users').get();
+        return snap.docs
+            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+            .where((u) => u.isActive)
+            .toList();
+      } catch (e) {
+        debugPrint('ReClaimRepository.getActiveUsers (users fallback) error: $e');
+      }
+    }
+    return _mockUsers.where((u) => u.isActive).toList();
+  }
+
+  Future<void> _dispatchCommonNotification({
+    required String title,
+    required String body,
+    required String itemId,
+    required String itemType,
+    required String reporterId,
+  }) async {
+    final now = DateTime.now();
+
+    if (FirebaseService.isInitialized) {
+      try {
+        final activeUsers = await getActiveUsers();
+        final eligibleRecipients = activeUsers
+            .where((u) => u.uid != reporterId && u.uid.isNotEmpty)
+            .toList();
+
+        if (eligibleRecipients.isNotEmpty) {
+          final batch = FirebaseService.firestore.batch();
+          int opsCount = 0;
+
+          for (final recipient in eligibleRecipients) {
+            final notifRef = FirebaseService.firestore.collection('notifications').doc();
+            final notif = NotificationModel(
+              id: notifRef.id,
+              userId: recipient.uid,
+              title: title,
+              body: body,
+              type: 'COMMON',
+              targetId: itemId,
+              itemType: itemType,
+              isRead: false,
+              createdAt: now,
+            );
+            batch.set(notifRef, notif.toMap());
+            opsCount++;
+
+            if (opsCount >= 400) {
+              await batch.commit();
+              opsCount = 0;
+            }
+          }
+
+          if (opsCount > 0) {
+            await batch.commit();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error dispatching common notifications to Firestore: $e');
+      }
+    }
+
+    // In-memory mock dispatch for offline mode and tests
+    final eligibleMockRecipients = _mockUsers
+        .where((u) => u.uid != reporterId && u.isActive)
+        .toList();
+    for (final recipient in eligibleMockRecipients) {
+      _mockNotifications.insert(
+        0,
+        NotificationModel(
+          id: _uuid.v4(),
+          userId: recipient.uid,
+          title: title,
+          body: body,
+          type: 'COMMON',
+          targetId: itemId,
+          itemType: itemType,
+          isRead: false,
+          createdAt: now,
+        ),
+      );
+    }
+    _notifyMockNotificationsChanged();
+  }
+
   Future<List<NotificationModel>> getNotifications(String userId) async {
-    return _mockNotifications.where((n) => n.userId == userId || n.userId == 'all' || n.userId == 'admin').toList();
+    if (FirebaseService.isInitialized) {
+      try {
+        final snap = await FirebaseService.firestore
+            .collection('notifications')
+            .where('userId', isEqualTo: userId)
+            .get();
+        final list = snap.docs
+            .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+            .toList();
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return list;
+      } catch (e) {
+        debugPrint('ReClaimRepository.getNotifications error: $e');
+      }
+    }
+    final list = _mockNotifications
+        .where((n) => n.userId == userId || n.userId == 'all' || n.userId == 'admin')
+        .toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  }
+
+  Stream<List<NotificationModel>> getNotificationsStream(String userId) async* {
+    if (FirebaseService.isInitialized) {
+      yield* FirebaseService.firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .snapshots()
+          .map((snapshot) {
+            final list = snapshot.docs
+                .map((doc) => NotificationModel.fromMap(doc.data(), doc.id))
+                .toList();
+            list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            return list;
+          });
+      return;
+    }
+
+    final current = _mockNotifications
+        .where((n) => n.userId == userId || n.userId == 'all' || n.userId == 'admin')
+        .toList();
+    current.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    yield current;
+
+    yield* _mockNotifController.stream.map((list) {
+      final filtered = list
+          .where((n) => n.userId == userId || n.userId == 'all' || n.userId == 'admin')
+          .toList();
+      filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return filtered;
+    });
   }
 
   Future<void> createNotification(NotificationModel notification) async {
-    _mockNotifications.insert(0, notification);
+    final notif = notification.id.isEmpty
+        ? notification.copyWith(id: _uuid.v4())
+        : notification;
+
+    if (FirebaseService.isInitialized) {
+      try {
+        await FirebaseService.firestore
+            .collection('notifications')
+            .doc(notif.id)
+            .set(notif.toMap());
+      } catch (e) {
+        debugPrint('ReClaimRepository.createNotification error: $e');
+      }
+    }
+
+    _mockNotifications.insert(0, notif);
+    _notifyMockNotificationsChanged();
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    if (FirebaseService.isInitialized) {
+      try {
+        await FirebaseService.firestore
+            .collection('notifications')
+            .doc(notificationId)
+            .update({'isRead': true});
+      } catch (e) {
+        debugPrint('ReClaimRepository.markNotificationAsRead error: $e');
+      }
+    }
+
+    final index = _mockNotifications.indexWhere((n) => n.id == notificationId);
+    if (index != -1) {
+      _mockNotifications[index] = _mockNotifications[index].copyWith(isRead: true);
+      _notifyMockNotificationsChanged();
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    if (FirebaseService.isInitialized) {
+      try {
+        final snap = await FirebaseService.firestore
+            .collection('notifications')
+            .where('userId', isEqualTo: userId)
+            .where('isRead', isEqualTo: false)
+            .get();
+        if (snap.docs.isNotEmpty) {
+          final batch = FirebaseService.firestore.batch();
+          for (final doc in snap.docs) {
+            batch.update(doc.reference, {'isRead': true});
+          }
+          await batch.commit();
+        }
+      } catch (e) {
+        debugPrint('ReClaimRepository.markAllNotificationsAsRead error: $e');
+      }
+    }
+
+    for (int i = 0; i < _mockNotifications.length; i++) {
+      if (_mockNotifications[i].userId == userId) {
+        _mockNotifications[i] = _mockNotifications[i].copyWith(isRead: true);
+      }
+    }
+    _notifyMockNotificationsChanged();
   }
 
   Future<List<UserModel>> getAllUsers() async {
+    if (FirebaseService.isInitialized) {
+      try {
+        final snap = await FirebaseService.firestore
+            .collection('users')
+            .orderBy('createdAt', descending: true)
+            .get();
+        return snap.docs
+            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+            .toList();
+      } catch (e) {
+        debugPrint('ReClaimRepository.getAllUsers error: $e');
+      }
+    }
     return _mockUsers;
+  }
+
+  // ---------------------------------------------------------------------------
+  // AUTOMATIC UNCLAIMED CLASSIFICATION
+  // ---------------------------------------------------------------------------
+
+  /// Checks if an ACTIVE item's createdAt is older than the configured
+  /// unclaimed threshold. Used to auto-classify stale items.
+  bool _isExpiredForUnclaimed(DateTime createdAt) {
+    final cutoff = DateTime.now().subtract(
+      Duration(days: AppConstants.unclaimedAfterDays),
+    );
+    return createdAt.isBefore(cutoff);
+  }
+
+  /// Auto-classifies ACTIVE lost items older than the threshold as UNCLAIMED.
+  /// Updates Firestore in a fire-and-forget manner and returns the updated list.
+  List<LostItemModel> _autoClassifyLostItems(List<LostItemModel> items) {
+    final result = <LostItemModel>[];
+    for (final item in items) {
+      if (item.status == AppConstants.statusActive &&
+          _isExpiredForUnclaimed(item.createdAt)) {
+        // Fire-and-forget Firestore update
+        updateLostItemStatus(item.id, AppConstants.statusUnclaimed);
+        result.add(item.copyWith(status: AppConstants.statusUnclaimed));
+      } else {
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  /// Auto-classifies ACTIVE found items older than the threshold as UNCLAIMED.
+  /// Updates Firestore in a fire-and-forget manner and returns the updated list.
+  List<FoundItemModel> _autoClassifyFoundItems(List<FoundItemModel> items) {
+    final result = <FoundItemModel>[];
+    for (final item in items) {
+      if (item.status == AppConstants.statusActive &&
+          _isExpiredForUnclaimed(item.createdAt)) {
+        // Fire-and-forget Firestore update
+        updateFoundItemStatus(item.id, AppConstants.statusUnclaimed);
+        result.add(item.copyWith(status: AppConstants.statusUnclaimed));
+      } else {
+        result.add(item);
+      }
+    }
+    return result;
+  }
+
+  /// Auto-classifies stale ACTIVE mock lost items as UNCLAIMED.
+  void _autoClassifyMockLostItems() {
+    for (int i = 0; i < _mockLostItems.length; i++) {
+      if (_mockLostItems[i].status == AppConstants.statusActive &&
+          _isExpiredForUnclaimed(_mockLostItems[i].createdAt)) {
+        _mockLostItems[i] = _mockLostItems[i].copyWith(
+          status: AppConstants.statusUnclaimed,
+          updatedAt: DateTime.now(),
+        );
+      }
+    }
+  }
+
+  /// Auto-classifies stale ACTIVE mock found items as UNCLAIMED.
+  void _autoClassifyMockFoundItems() {
+    for (int i = 0; i < _mockFoundItems.length; i++) {
+      if (_mockFoundItems[i].status == AppConstants.statusActive &&
+          _isExpiredForUnclaimed(_mockFoundItems[i].createdAt)) {
+        _mockFoundItems[i] = _mockFoundItems[i].copyWith(
+          status: AppConstants.statusUnclaimed,
+          updatedAt: DateTime.now(),
+        );
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -506,6 +1025,8 @@ class ReClaimRepository {
       LostItemModel(
         id: 'lost_01',
         ownerId: student.uid,
+        reporterName: student.name,
+        reporterEmail: student.email,
         itemName: 'Black Leather Wallet',
         category: 'Wallet',
         description: 'Black WildHorn leather wallet containing College ID card and metro pass.',
@@ -522,6 +1043,8 @@ class ReClaimRepository {
       LostItemModel(
         id: 'lost_02',
         ownerId: student.uid,
+        reporterName: student.name,
+        reporterEmail: student.email,
         itemName: 'Casio Scientific Calculator FX-991EX',
         category: 'Calculator',
         description: 'Black solar scientific calculator with name label "Ananya" on the back cover.',
@@ -542,6 +1065,8 @@ class ReClaimRepository {
       FoundItemModel(
         id: 'found_01',
         finderId: admin.uid,
+        reporterName: admin.name,
+        reporterEmail: admin.email,
         itemName: 'Black Leather Wallet',
         category: 'Wallet',
         description: 'Found black leather wallet near Library study table. Kept securely at security desk.',
@@ -559,6 +1084,8 @@ class ReClaimRepository {
       FoundItemModel(
         id: 'found_02',
         finderId: admin.uid,
+        reporterName: admin.name,
+        reporterEmail: admin.email,
         itemName: 'Dell Wireless Mouse',
         category: 'Electronics',
         description: 'Black Dell optical wireless USB mouse found on desk 14.',

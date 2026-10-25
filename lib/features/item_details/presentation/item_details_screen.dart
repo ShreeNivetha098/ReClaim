@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/date_formatter.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/models/found_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
@@ -33,6 +34,16 @@ class ItemDetailsScreen extends ConsumerWidget {
     final date = isLost ? lostItem!.dateLost : foundItem!.dateFound;
     final imageUrl = isLost ? lostItem!.imageUrl : foundItem!.imageUrl;
     final status = isLost ? lostItem!.status : foundItem!.status;
+    final reporterName = isLost ? lostItem!.reporterName : foundItem!.reporterName;
+    final reporterEmail = isLost ? lostItem!.reporterEmail : foundItem!.reporterEmail;
+    final createdAt = isLost ? lostItem!.createdAt : foundItem!.createdAt;
+    final countdownLabel = DateFormatter.getUnclaimedCountdownLabel(createdAt, status);
+    final displayName = reporterName != null && reporterName.trim().isNotEmpty
+        ? reporterName
+        : 'Unknown user';
+    final displayEmail = reporterEmail != null && reporterEmail.trim().isNotEmpty
+        ? reporterEmail
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -145,7 +156,74 @@ class ItemDetailsScreen extends ConsumerWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+
+                  // Unclaimed Deadline Banner (if applicable)
+                  if (countdownLabel != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: countdownLabel == 'Unclaimed period expired'
+                            ? AppColors.statusUnclaimedBg
+                            : AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: countdownLabel == 'Unclaimed period expired'
+                              ? AppColors.statusUnclaimedText.withValues(alpha: 0.3)
+                              : AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            countdownLabel == 'Unclaimed period expired'
+                                ? Icons.timer_off_outlined
+                                : Icons.hourglass_bottom_rounded,
+                            size: 20,
+                            color: countdownLabel == 'Unclaimed period expired'
+                                ? AppColors.statusUnclaimedText
+                                : AppColors.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  countdownLabel == 'Unclaimed period expired'
+                                      ? 'Unclaimed period expired'
+                                      : '$countdownLabel remaining',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: countdownLabel == 'Unclaimed period expired'
+                                        ? AppColors.statusUnclaimedText
+                                        : AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  countdownLabel == 'Unclaimed period expired'
+                                      ? 'This report has reached its 30-day unclaimed deadline.'
+                                      : 'Reports unclaimed after 30 days are marked as unclaimed.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: countdownLabel == 'Unclaimed period expired'
+                                        ? AppColors.statusUnclaimedText.withValues(alpha: 0.8)
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                  ],
 
                   // Smart Match Box (If Lost Item)
                   if (isLost) ...[
@@ -233,8 +311,17 @@ class ItemDetailsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  _buildDetailRow(Icons.person_outline_rounded, 'Reported By', displayName),
                   _buildDetailRow(Icons.location_on_outlined, 'Location', location),
                   _buildDetailRow(Icons.calendar_today_rounded, 'Date Reported', DateFormat('MMMM dd, yyyy').format(date)),
+                  if (countdownLabel != null)
+                    _buildDetailRow(
+                      countdownLabel == 'Unclaimed period expired'
+                          ? Icons.timer_off_outlined
+                          : Icons.hourglass_bottom_rounded,
+                      'Unclaimed Deadline',
+                      countdownLabel,
+                    ),
                   _buildDetailRow(Icons.branding_watermark_outlined, 'Brand', brand.isEmpty ? 'N/A' : brand),
                   _buildDetailRow(Icons.color_lens_outlined, 'Colour', colour.isEmpty ? 'N/A' : colour),
                   if (isLost && lostItem!.approximateValue.isNotEmpty)
@@ -274,7 +361,7 @@ class ItemDetailsScreen extends ConsumerWidget {
 
                   const SizedBox(height: 20),
 
-                  // Reporter Information (Privacy Protected)
+                  // Reporter Information
                   const Text(
                     'Reporter Verification Info',
                     style: TextStyle(
@@ -298,18 +385,20 @@ class ItemDetailsScreen extends ConsumerWidget {
                           child: Icon(Icons.verified_user_rounded, color: Colors.white),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Verified Institutional User',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                displayName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'Department of Computer Science • MCA Student',
-                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                displayEmail != null
+                                    ? '$displayEmail • Verified Institutional User'
+                                    : 'Verified Institutional User',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
                           ),

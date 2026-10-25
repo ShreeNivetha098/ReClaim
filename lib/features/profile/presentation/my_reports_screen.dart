@@ -80,9 +80,11 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> with SingleTi
                       category: item.category,
                       location: item.locationLost,
                       date: item.dateLost,
+                      createdAt: item.createdAt,
                       imageUrl: item.imageUrl,
                       status: item.status,
                       isLost: true,
+                      reporterName: item.reporterName,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -125,9 +127,11 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> with SingleTi
                       category: item.category,
                       location: item.locationFound,
                       date: item.dateFound,
+                      createdAt: item.createdAt,
                       imageUrl: item.imageUrl,
                       status: item.status,
                       isLost: false,
+                      reporterName: item.reporterName,
                       onTap: () {
                         Navigator.push(
                           context,

@@ -13,4 +13,18 @@ abstract class AppRoutes {
   static const String itemDetails = '/item-details/:id';
   static const String claimItem = '/claim-item/:id';
   static const String profile = '/profile';
+
+  // Admin Dashboard Routes (Web)
+  static const String adminLogin = '/admin/login';
+  static const String adminDashboard = '/admin';
+  static const String adminOverview = '/admin/overview';
+  static const String adminUsers = '/admin/users';
+  static const String adminReports = '/admin/lost-reports';
+  static const String adminLostReports = '/admin/lost-reports';
+  static const String adminFoundReports = '/admin/found-reports';
+  static const String adminClaims = '/admin/claims';
+  static const String adminClaimed = '/admin/claimed';
+  static const String adminUnclaimed = '/admin/unclaimed';
+  static const String adminActivity = '/admin/activity';
+  static const String adminAnalytics = '/admin/analytics';
 }

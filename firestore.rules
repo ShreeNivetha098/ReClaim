@@ -18,10 +18,26 @@ service cloud.firestore {
     }
 
     // Users Collection
+    // SECURITY: Users cannot self-assign 'Admin' role during registration or update.
+    // Admin accounts must be created by an existing Admin or via Firebase Console.
+    // Reading user profiles is restricted to the user themselves or Admins to protect personal data.
     match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated()
+                    && request.auth.uid == userId
+                    && request.resource.data.role != 'Admin';
+      allow update: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && (!('isActive' in resource.data) || request.resource.data.isActive == resource.data.isActive)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Active Users Registry (for Common Notification routing without exposing private profiles)
+    match /active_users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isOwner(userId) || isAdmin();
+      allow create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
@@ -65,6 +81,14 @@ service cloud.firestore {
     // Messages Collection
     match /messages/{messageId} {
       allow read, write: if isAuthenticated();
+    }
+
+    // Activity Logs Collection (Admin Dashboard)
+    // Only admins can read logs. Any authenticated action can create a log entry.
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
   }
 }
