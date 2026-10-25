@@ -15,7 +15,19 @@ class FirebaseService {
         _isFirebaseInitialized = true;
         return;
       }
-      await Firebase.initializeApp();
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: 'AIzaSyBz0zJ9lzp38DODY1VwAUHgiSDfHxZYBts',
+            appId: '1:460524298187:web:reclaim',
+            messagingSenderId: '460524298187',
+            projectId: 'reclaim-c4695',
+            storageBucket: 'reclaim-c4695.appspot.com',
+          ),
+        );
+      } else {
+        await Firebase.initializeApp();
+      }
       _isFirebaseInitialized = true;
       debugPrint('Firebase initialized successfully.');
     } catch (e) {

@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/utils/date_formatter.dart';
 
 class LostItemModel {
   final String id;
   final String ownerId;
+  final String? reporterName;
+  final String? reporterEmail;
   final String itemName;
   final String category;
   final String description;
@@ -19,6 +22,8 @@ class LostItemModel {
   LostItemModel({
     required this.id,
     required this.ownerId,
+    this.reporterName,
+    this.reporterEmail,
     required this.itemName,
     required this.category,
     required this.description,
@@ -37,6 +42,8 @@ class LostItemModel {
     return LostItemModel(
       id: docId,
       ownerId: map['ownerId'] ?? '',
+      reporterName: map['reporterName'] ?? map['ownerName'],
+      reporterEmail: map['reporterEmail'] ?? map['ownerEmail'],
       itemName: map['itemName'] ?? '',
       category: map['category'] ?? '',
       description: map['description'] ?? '',
@@ -62,6 +69,8 @@ class LostItemModel {
     return {
       'id': id,
       'ownerId': ownerId,
+      'reporterName': reporterName,
+      'reporterEmail': reporterEmail,
       'itemName': itemName,
       'category': category,
       'description': description,
@@ -80,6 +89,8 @@ class LostItemModel {
   LostItemModel copyWith({
     String? id,
     String? ownerId,
+    String? reporterName,
+    String? reporterEmail,
     String? itemName,
     String? category,
     String? description,
@@ -96,6 +107,8 @@ class LostItemModel {
     return LostItemModel(
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
+      reporterName: reporterName ?? this.reporterName,
+      reporterEmail: reporterEmail ?? this.reporterEmail,
       itemName: itemName ?? this.itemName,
       category: category ?? this.category,
       description: description ?? this.description,
@@ -110,4 +123,11 @@ class LostItemModel {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  /// Number of days remaining before reaching the 30-day unclaimed threshold.
+  int get daysRemaining => DateFormatter.daysRemainingUntilUnclaimed(createdAt);
+
+  /// Formatted countdown label for the UI (e.g. "18 days left" or "Unclaimed period expired").
+  /// Returns null for claimed, returned, or closed reports.
+  String? get countdownLabel => DateFormatter.getUnclaimedCountdownLabel(createdAt, status);
 }

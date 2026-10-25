@@ -26,6 +26,10 @@ class StatusChip extends StatelessWidget {
         bgColor = AppColors.statusClaimedBg;
         textColor = AppColors.statusClaimedText;
         break;
+      case 'UNCLAIMED':
+        bgColor = AppColors.statusUnclaimedBg;
+        textColor = AppColors.statusUnclaimedText;
+        break;
       case 'RETURNED':
         bgColor = AppColors.statusReturnedBg;
         textColor = AppColors.statusReturnedText;

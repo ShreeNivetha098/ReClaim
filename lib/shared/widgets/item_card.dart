@@ -11,10 +11,12 @@ class ItemCard extends StatelessWidget {
   final String category;
   final String location;
   final DateTime date;
+  final DateTime? createdAt;
   final String? imageUrl;
   final String status;
   final bool isLost;
   final double? matchPercentage;
+  final String? reporterName;
   final VoidCallback onTap;
 
   const ItemCard({
@@ -23,15 +25,20 @@ class ItemCard extends StatelessWidget {
     required this.category,
     required this.location,
     required this.date,
+    this.createdAt,
     this.imageUrl,
     required this.status,
     required this.isLost,
     this.matchPercentage,
+    this.reporterName,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveCreatedAt = createdAt ?? date;
+    final countdownLabel = DateFormatter.getUnclaimedCountdownLabel(effectiveCreatedAt, status);
+
     return CustomCard(
       onTap: onTap,
       padding: EdgeInsets.zero,
@@ -110,6 +117,44 @@ class ItemCard extends StatelessWidget {
                 right: 8,
                 child: StatusChip(status: status),
               ),
+
+              // Unclaimed Countdown / Deadline Badge
+              if (countdownLabel != null)
+                Positioned(
+                  bottom: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: countdownLabel == 'Unclaimed period expired'
+                          ? AppColors.statusUnclaimedText.withValues(alpha: 0.92)
+                          : Colors.black.withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          countdownLabel == 'Unclaimed period expired'
+                              ? Icons.timer_off_outlined
+                              : Icons.hourglass_bottom_rounded,
+                          size: 11,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          countdownLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // Match Percentage Badge (if available)
               if (matchPercentage != null)
@@ -213,6 +258,25 @@ class ItemCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Reported by: ${reporterName != null && reporterName!.trim().isNotEmpty ? reporterName! : "Unknown user"}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],

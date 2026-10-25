@@ -59,16 +59,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _fillDemoStudent() {
-    _emailController.text = 'ananya@reclaim.edu';
-    _passwordController.text = 'password123';
-  }
-
-  void _fillDemoAdmin() {
-    _emailController.text = 'admin@reclaim.edu';
-    _passwordController.text = 'admin123';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,52 +181,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Quick Demo Shortcuts Banner for Review Presentation
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          '⚡ Quick Demo Shortcuts for Review',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _fillDemoStudent,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                                child: const Text('Student Demo', style: TextStyle(fontSize: 12)),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _fillDemoAdmin,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                                child: const Text('Admin Demo', style: TextStyle(fontSize: 12)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
 
                   // Register link
                   Row(

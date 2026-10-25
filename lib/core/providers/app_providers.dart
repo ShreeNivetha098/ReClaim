@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/reclaim_repository.dart';
 import '../services/matching_service.dart';
+import '../constants/app_constants.dart';
 import '../../shared/models/user_model.dart';
 import '../../shared/models/lost_item_model.dart';
 import '../../shared/models/found_item_model.dart';
@@ -9,6 +10,7 @@ import '../../shared/models/match_result_model.dart';
 import '../../shared/models/notification_model.dart';
 import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/chat_message_model.dart';
+import '../services/push_notification_service.dart';
 
 // Single repository instance provider
 final repositoryProvider = Provider<ReClaimRepository>((ref) {
@@ -24,9 +26,13 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
   }
 
   Future<void> _init() async {
-    final user = await _repo.checkCurrentUser();
-    state = user;
+  final user = await _repo.checkCurrentUser();
+  state = user;
+
+  if (user != null) {
+    await PushNotificationService.registerDeviceForUser(user.uid);
   }
+}
 
   Future<void> register({
     required String name,
@@ -47,17 +53,20 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
       role: role,
     );
     state = user;
+    await PushNotificationService.registerDeviceForUser(user.uid);
   }
 
   Future<void> login(String email, String password) async {
-    final user = await _repo.loginUser(email: email, password: password);
-    state = user;
-  }
+  final user = await _repo.loginUser(email: email, password: password);
+  state = user;
+  await PushNotificationService.registerDeviceForUser(user.uid);
+}
 
   Future<void> logout() async {
-    await _repo.logoutUser();
-    state = null;
-  }
+  await PushNotificationService.unregisterDevice();
+  await _repo.logoutUser();
+  state = null;
+}
 
   Future<void> updateProfile(UserModel updatedUser) async {
     await _repo.updateUserProfile(updatedUser);
@@ -146,6 +155,30 @@ final foundItemsProvider = StateNotifierProvider<FoundItemsNotifier, AsyncValue<
   return FoundItemsNotifier(repo);
 });
 
+// ---------------------------------------------------------------------------
+// ACTIVE-ONLY DERIVED PROVIDERS (for Home feed)
+// These filter the full item lists to show only ACTIVE items.
+// CLAIMED and UNCLAIMED items are excluded from the normal feed.
+// ---------------------------------------------------------------------------
+
+final activeLostItemsProvider = Provider<AsyncValue<List<LostItemModel>>>((ref) {
+  final allItems = ref.watch(lostItemsProvider);
+  return allItems.whenData(
+    (items) => items
+        .where((item) => item.status.toUpperCase() == AppConstants.statusActive)
+        .toList(),
+  );
+});
+
+final activeFoundItemsProvider = Provider<AsyncValue<List<FoundItemModel>>>((ref) {
+  final allItems = ref.watch(foundItemsProvider);
+  return allItems.whenData(
+    (items) => items
+        .where((item) => item.status.toUpperCase() == AppConstants.statusActive)
+        .toList(),
+  );
+});
+
 // Claims State
 class ClaimsNotifier extends StateNotifier<AsyncValue<List<ClaimModel>>> {
   final ReClaimRepository _repo;
@@ -180,11 +213,20 @@ final claimsProvider = StateNotifierProvider<ClaimsNotifier, AsyncValue<List<Cla
   return ClaimsNotifier(repo);
 });
 
-// Notifications Provider
-final notificationsProvider = FutureProvider<List<NotificationModel>>((ref) async {
+// Notifications Provider (Real-time Stream)
+final notificationsProvider = StreamProvider<List<NotificationModel>>((ref) {
   final repo = ref.watch(repositoryProvider);
   final user = ref.watch(currentUserProvider);
-  return repo.getNotifications(user?.uid ?? 'guest');
+  return repo.getNotificationsStream(user?.uid ?? 'guest');
+});
+
+// Unread Notifications Count Provider
+final unreadNotificationsCountProvider = Provider<int>((ref) {
+  final notifsAsync = ref.watch(notificationsProvider);
+  return notifsAsync.maybeWhen(
+    data: (items) => items.where((n) => !n.isRead).length,
+    orElse: () => 0,
+  );
 });
 
 // Smart Matches Provider for a given Lost Item

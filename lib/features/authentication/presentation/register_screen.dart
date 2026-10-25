@@ -44,6 +44,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     'Student',
     'Faculty',
     'Staff',
+    'Admin',
   ];
 
   @override
@@ -58,6 +59,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
+    if (_selectedRole == 'Admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Admin accounts cannot be created through public signup. Please contact the system administrator to obtain an Admin account.',
+          ),
+          backgroundColor: AppColors.error,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -192,13 +206,99 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   items: _userTypes
                       .map((type) => DropdownMenuItem(
                             value: type,
-                            child: Text(type),
+                            child: Row(
+                              children: [
+                                Text(type),
+                                if (type == 'Admin') ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accent.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: AppColors.accentDark.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Restricted',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.accentDark,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ))
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedRole = val);
                   },
                 ),
+                if (_selectedRole == 'Admin') ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.accentDark.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.admin_panel_settings_outlined,
+                          color: AppColors.accentDark,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Administrator Role',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Administrator — manages users, reports, claims, and the ReClaim system.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  height: 1.35,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Admin accounts cannot be created through public signup. Please contact the system administrator to obtain an Admin account.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.accentDark,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // Department Dropdown

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,7 +27,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
 
   String _selectedCategory = 'ID Card';
   DateTime _dateFound = DateTime.now();
-  File? _selectedImage;
+  Uint8List? _imageBytes;
   bool _securityOfficeSubmitted = false;
   bool _isSubmitting = false;
 
@@ -57,10 +57,26 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+    if (_isSubmitting) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -79,29 +95,23 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Image is strictly REQUIRED for found items
-    if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Photo is required when reporting a found item for verification.'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
     setState(() => _isSubmitting = true);
 
     try {
       final user = ref.read(currentUserProvider);
       final repo = ref.read(repositoryProvider);
 
-      final uploadedImageUrl = await repo.uploadImage(_selectedImage!, 'found_items');
+      String? uploadedImageUrl;
+      if (_imageBytes != null) {
+        uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!, 'found_items');
+      }
 
       final now = DateTime.now();
       final newFoundItem = FoundItemModel(
         id: '',
         finderId: user?.uid ?? 'guest',
+        reporterName: user != null && user.name.trim().isNotEmpty ? user.name : 'Unknown user',
+        reporterEmail: user?.email ?? '',
         itemName: _itemNameController.text.trim(),
         category: _selectedCategory,
         description: _descriptionController.text.trim(),
@@ -160,7 +170,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Mandatory Image Picker Header
+                // Image Picker (Optional)
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
@@ -169,14 +179,43 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                       color: AppColors.secondary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: _selectedImage == null ? AppColors.secondary : AppColors.divider,
-                        width: _selectedImage == null ? 2 : 1,
+                        color: _imageBytes != null ? AppColors.secondary : AppColors.divider,
+                        width: 1,
                       ),
                     ),
-                    child: _selectedImage != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                    child: _imageBytes != null
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.memory(
+                                  _imageBytes!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _imageBytes = null;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                  ),
+                                ),
+                              ),
+                            ],
                           )
                         : const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -184,7 +223,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                               Icon(Icons.camera_alt_outlined, size: 44, color: AppColors.secondary),
                               SizedBox(height: 8),
                               Text(
-                                'Upload Photo (REQUIRED) *',
+                                'Photo (Optional)',
                                 style: TextStyle(
                                   color: AppColors.secondary,
                                   fontWeight: FontWeight.bold,
@@ -193,7 +232,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Proof photo is mandatory for reporting found items',
+                                'Add a photo if available to help identify the item',
                                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                               ),
                             ],

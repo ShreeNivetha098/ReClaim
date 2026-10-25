@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/app_providers.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../search/presentation/search_screen.dart';
 import '../../notifications/presentation/notifications_screen.dart';
@@ -146,6 +147,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final unreadNotifsCount = ref.watch(unreadNotificationsCountProvider);
+
     final screens = [
       HomeScreen(
         onNavigateToSearch: () => setState(() => _selectedIndex = 1),
@@ -165,28 +168,38 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textMuted,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.search_rounded),
             activeIcon: Icon(Icons.search_rounded),
             label: 'Search',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline_rounded, size: 30),
             activeIcon: Icon(Icons.add_circle_rounded, size: 30),
             label: 'Report',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none_rounded),
-            activeIcon: Icon(Icons.notifications_rounded),
+            icon: unreadNotifsCount > 0
+                ? Badge.count(
+                    count: unreadNotifsCount,
+                    child: const Icon(Icons.notifications_none_rounded),
+                  )
+                : const Icon(Icons.notifications_none_rounded),
+            activeIcon: unreadNotifsCount > 0
+                ? Badge.count(
+                    count: unreadNotifsCount,
+                    child: const Icon(Icons.notifications_rounded),
+                  )
+                : const Icon(Icons.notifications_rounded),
             label: 'Notifications',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline_rounded),
             activeIcon: Icon(Icons.person_rounded),
             label: 'Profile',

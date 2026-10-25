@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../shared/widgets/item_card.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
@@ -18,6 +19,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
   final _searchController = TextEditingController();
 
   String _selectedCategory = 'All';
+  String _selectedStatus = 'All Active';
   final String _selectedSort = 'Newest';
 
   final List<String> _categories = [
@@ -35,6 +37,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
     'Other',
   ];
 
+  final List<String> _statusFilters = [
+    'All Active',
+    'Unclaimed',
+    'Claimed',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -48,11 +56,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
     super.dispose();
   }
 
+  /// Returns the Firestore status value that corresponds to the selected
+  /// filter label, or null when no specific status is being filtered.
+  String? _resolveStatusFilter() {
+    switch (_selectedStatus) {
+      case 'All Active':
+        return AppConstants.statusActive;
+      case 'Unclaimed':
+        return AppConstants.statusUnclaimed;
+      case 'Claimed':
+        return AppConstants.statusClaimed;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lostItemsAsync = ref.watch(lostItemsProvider);
     final foundItemsAsync = ref.watch(foundItemsProvider);
     final query = _searchController.text.trim().toLowerCase();
+    final statusFilter = _resolveStatusFilter();
 
     return Scaffold(
       appBar: AppBar(
@@ -94,6 +118,41 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // Status Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _statusFilters.map((status) {
+                      final isSelected = _selectedStatus == status;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Text(status),
+                          selected: isSelected,
+                          selectedColor: _statusChipColor(status).withValues(alpha: 0.2),
+                          avatar: isSelected
+                              ? Icon(
+                                  _statusChipIcon(status),
+                                  size: 16,
+                                  color: _statusChipColor(status),
+                                )
+                              : null,
+                          labelStyle: TextStyle(
+                            color: isSelected ? _statusChipColor(status) : AppColors.textSecondary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                          onSelected: (selected) {
+                            setState(() {
+                              _selectedStatus = selected ? status : 'All Active';
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
 
                 // Category Chips Horizontal Scroll
                 SingleChildScrollView(
@@ -143,7 +202,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                           item.brand.toLowerCase().contains(query) ||
                           item.colour.toLowerCase().contains(query) ||
                           item.locationLost.toLowerCase().contains(query);
-                      return matchesCategory && matchesQuery;
+                      final matchesStatus = statusFilter == null ||
+                          item.status.toUpperCase() == statusFilter;
+                      return matchesCategory && matchesQuery && matchesStatus;
                     }).toList();
 
                     if (_selectedSort == 'Newest') {
@@ -153,9 +214,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                     }
 
                     if (filtered.isEmpty) {
-                      return const EmptyStateWidget(
+                      return EmptyStateWidget(
                         title: 'No Lost Items Found',
-                        description: 'Try adjusting your search keywords or category filters.',
+                        description: _selectedStatus != 'All Active'
+                            ? 'No $_selectedStatus lost items match your filters.'
+                            : 'Try adjusting your search keywords or category filters.',
                         icon: Icons.search_off_rounded,
                       );
                     }
@@ -164,7 +227,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                       padding: const EdgeInsets.all(16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.65,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
@@ -176,9 +239,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                           category: item.category,
                           location: item.locationLost,
                           date: item.dateLost,
+                          createdAt: item.createdAt,
                           imageUrl: item.imageUrl,
                           status: item.status,
                           isLost: true,
+                          reporterName: item.reporterName,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -207,7 +272,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                           item.brand.toLowerCase().contains(query) ||
                           item.colour.toLowerCase().contains(query) ||
                           item.locationFound.toLowerCase().contains(query);
-                      return matchesCategory && matchesQuery;
+                      final matchesStatus = statusFilter == null ||
+                          item.status.toUpperCase() == statusFilter;
+                      return matchesCategory && matchesQuery && matchesStatus;
                     }).toList();
 
                     if (_selectedSort == 'Newest') {
@@ -217,9 +284,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                     }
 
                     if (filtered.isEmpty) {
-                      return const EmptyStateWidget(
+                      return EmptyStateWidget(
                         title: 'No Found Items Found',
-                        description: 'Try adjusting your search keywords or category filters.',
+                        description: _selectedStatus != 'All Active'
+                            ? 'No $_selectedStatus found items match your filters.'
+                            : 'Try adjusting your search keywords or category filters.',
                         icon: Icons.find_in_page_outlined,
                       );
                     }
@@ -228,7 +297,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                       padding: const EdgeInsets.all(16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.65,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
@@ -240,9 +309,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                           category: item.category,
                           location: item.locationFound,
                           date: item.dateFound,
+                          createdAt: item.createdAt,
                           imageUrl: item.imageUrl,
                           status: item.status,
                           isLost: false,
+                          reporterName: item.reporterName,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -264,5 +335,31 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
         ],
       ),
     );
+  }
+
+  /// Returns a color associated with the given status filter label.
+  Color _statusChipColor(String status) {
+    switch (status) {
+      case 'Unclaimed':
+        return AppColors.statusUnclaimedText;
+      case 'Claimed':
+        return AppColors.statusClaimedText;
+      case 'All Active':
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  /// Returns an icon associated with the given status filter label.
+  IconData _statusChipIcon(String status) {
+    switch (status) {
+      case 'Unclaimed':
+        return Icons.timer_off_outlined;
+      case 'Claimed':
+        return Icons.assignment_turned_in_outlined;
+      case 'All Active':
+      default:
+        return Icons.check_circle_outline;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,7 +27,7 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
 
   String _selectedCategory = 'ID Card';
   DateTime _dateLost = DateTime.now();
-  File? _selectedImage;
+  Uint8List? _imageBytes;
   bool _isSubmitting = false;
 
   final List<String> _categories = [
@@ -56,10 +56,26 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+    if (_isSubmitting) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -85,14 +101,16 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
       final repo = ref.read(repositoryProvider);
 
       String? uploadedImageUrl;
-      if (_selectedImage != null) {
-        uploadedImageUrl = await repo.uploadImage(_selectedImage!, 'lost_items');
+      if (_imageBytes != null) {
+        uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!, 'lost_items');
       }
 
       final now = DateTime.now();
       final newLostItem = LostItemModel(
         id: '',
         ownerId: user?.uid ?? 'guest',
+        reporterName: user != null && user.name.trim().isNotEmpty ? user.name : 'Unknown user',
+        reporterEmail: user?.email ?? '',
         itemName: _itemNameController.text.trim(),
         category: _selectedCategory,
         description: _descriptionController.text.trim(),
@@ -161,10 +179,39 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
                         style: BorderStyle.solid,
                       ),
                     ),
-                    child: _selectedImage != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                    child: _imageBytes != null
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.memory(
+                                  _imageBytes!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _imageBytes = null;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.white, size: 18),
+                                  ),
+                                ),
+                              ),
+                            ],
                           )
                         : const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
