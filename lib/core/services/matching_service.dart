@@ -11,6 +11,14 @@ class MatchingService {
   static const double locationWeight = 15.0;
   static const double dateWeight = 10.0;
 
+  /// Matches at or above this score are listed as potential matches.
+  static const double displayThreshold = 35.0;
+
+  /// Matches at or above this score notify the lost item's owner. Higher than
+  /// [displayThreshold] because unknown brand/colour and a close date alone
+  /// already add up to about 20 points.
+  static const double notifyThreshold = 60.0;
+
   /// Calculate match percentage between a lost item and a found item
   static MatchResultModel calculateMatch({
     required LostItemModel lostItem,
@@ -69,6 +77,31 @@ class MatchingService {
       if (foundItem.status.toUpperCase() != 'ACTIVE' && foundItem.status.toUpperCase() != 'MATCHED') {
         continue;
       }
+      if (foundItem.finderId == lostItem.ownerId) continue;
+      final match = calculateMatch(lostItem: lostItem, foundItem: foundItem);
+      if (match.matchPercentage >= minThreshold) {
+        results.add(match);
+      }
+    }
+
+    results.sort((a, b) => b.matchPercentage.compareTo(a.matchPercentage));
+    return results;
+  }
+
+  /// Finds lost reports that a newly found item may belong to, sorted
+  /// descending by match percentage. Reports by the finder are skipped.
+  static List<MatchResultModel> findMatchesForFoundItem({
+    required FoundItemModel foundItem,
+    required List<LostItemModel> lostItems,
+    double minThreshold = 40.0,
+  }) {
+    final results = <MatchResultModel>[];
+
+    for (final lostItem in lostItems) {
+      if (lostItem.status.toUpperCase() != 'ACTIVE' && lostItem.status.toUpperCase() != 'MATCHED') {
+        continue;
+      }
+      if (lostItem.ownerId == foundItem.finderId) continue;
       final match = calculateMatch(lostItem: lostItem, foundItem: foundItem);
       if (match.matchPercentage >= minThreshold) {
         results.add(match);

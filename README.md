@@ -19,8 +19,16 @@ Firebase plan or a paid Apple Developer account.
 -   **Smart matching** that scores lost reports against found reports
     by category, name/description keywords, brand, colour, location and
     date. Matching runs on the phone.
--   **Potential-match banner** on the home screen, with a screen listing
-    candidate matches.
+-   **Matching in both directions**: a new found report is checked
+    against open lost reports, and a new lost report against existing
+    found reports.
+-   **Match notifications** go only to the owner of the lost report
+    (never the finder), once per lost/found pair, for matches scoring
+    60% or more. They appear as an iOS banner (while the app is open or
+    when the user returns to it) and in the Notifications screen;
+    tapping either opens the found item.
+-   **Potential-match banner** on the home screen for the user's own
+    lost reports, with a screen listing candidate matches.
 -   **Claims**: a user claims a found item by answering ownership
     questions; an admin approves or rejects the claim, and approval
     marks both items as claimed.
@@ -32,10 +40,8 @@ Firebase plan or a paid Apple Developer account.
 
 ### In progress
 See [Roadmap](#roadmap) for details.
--   Matching in both directions (a new found report should alert the
-    owner of a matching lost report).
 -   Edit, delete and "mark as recovered" for a user's own reports.
--   Local notifications for new matches and claim decisions.
+-   Notifications for claim decisions.
 
 ## Tech Stack
 
@@ -156,7 +162,7 @@ flutter analyze
 flutter test
 ```
 
-Latest run: **30 tests passing** and **no analyzer issues**.
+Latest run: **39 tests passing** and **no analyzer issues**.
 
 ### Security-rule tests
 `firestore-tests/` checks `firestore.rules` against the local Firestore
@@ -167,7 +173,7 @@ npm --prefix firestore-tests install
 firebase emulators:exec --project demo-reclaim --only firestore "npm --prefix firestore-tests test"
 ```
 
-Latest run: **24 rule tests passing**.
+Latest run: **28 rule tests passing**.
 
 ## Roadmap
 
@@ -179,11 +185,12 @@ Planned work, all within the free Firebase plan:
 3.  **Done:** Fix Firestore security rules (chat messages,
     notifications, chat creation, activity log) and remove the demo
     role-switch button; rules are covered by emulator tests.
-4.  Match in both directions and add local notifications for new
-    matches and claim decisions.
+4.  **Done:** Match in both directions and notify only the lost
+    report's owner with an iOS banner. Claim-decision notifications
+    are still to do.
 5.  Add edit, delete and "mark as recovered" to My Reports; let the
     finder record a hidden detail for ownership checks.
-6.  Add automated tests for matching.
+6.  **Done:** Add automated tests for matching.
 7.  Decide on in-app chat (Firestore-based) and on-device image
     analysis, or keep them as future work.
 
