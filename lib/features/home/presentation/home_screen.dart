@@ -60,20 +60,6 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.swap_horiz_rounded),
-            tooltip: 'Switch Demo Role (Student/Admin)',
-            onPressed: () {
-              final newRole = isAdmin ? 'Student' : 'Admin';
-              ref.read(currentUserProvider.notifier).switchRoleForDemo(newRole);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Switched user role to $newRole for demo testing'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-          ),
-          IconButton(
             icon: unreadNotifsCount > 0
                 ? Badge.count(
                     count: unreadNotifsCount,

@@ -41,6 +41,8 @@ coverage/
 # Firebase generated files
 firebase-debug.log
 firebase-debug.*.log
+firestore-debug.log
+node_modules/
 
 # Android generated files
 android/.gradle/

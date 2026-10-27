@@ -36,7 +36,6 @@ See [Roadmap](#roadmap) for details.
     owner of a matching lost report).
 -   Edit, delete and "mark as recovered" for a user's own reports.
 -   Local notifications for new matches and claim decisions.
--   Security-rule fixes and automated rule tests.
 
 ## Tech Stack
 
@@ -159,6 +158,17 @@ flutter test
 
 Latest run: **30 tests passing** and **no analyzer issues**.
 
+### Security-rule tests
+`firestore-tests/` checks `firestore.rules` against the local Firestore
+emulator (needs Node.js and Java; free, no real project is touched):
+
+``` bash
+npm --prefix firestore-tests install
+firebase emulators:exec --project demo-reclaim --only firestore "npm --prefix firestore-tests test"
+```
+
+Latest run: **24 rule tests passing**.
+
 ## Roadmap
 
 Planned work, all within the free Firebase plan:
@@ -166,14 +176,14 @@ Planned work, all within the free Firebase plan:
 1.  **Done:** iOS-only cleanup (Android, web and remote-push code
     removed; photo-library permission added).
 2.  **Done:** Move item photos from Firebase Storage into Firestore.
-3.  Fix Firestore security rules (chat messages, notifications, chat
-    creation) and remove the demo role-switch button.
+3.  **Done:** Fix Firestore security rules (chat messages,
+    notifications, chat creation, activity log) and remove the demo
+    role-switch button; rules are covered by emulator tests.
 4.  Match in both directions and add local notifications for new
     matches and claim decisions.
 5.  Add edit, delete and "mark as recovered" to My Reports; let the
     finder record a hidden detail for ownership checks.
-6.  Add automated tests for matching and for security rules (Firebase
-    emulator).
+6.  Add automated tests for matching.
 7.  Decide on in-app chat (Firestore-based) and on-device image
     analysis, or keep them as future work.
 
@@ -183,6 +193,9 @@ Planned work, all within the free Firebase plan:
     `.gitignore`; never commit them.
 -   The PSG Tech email check in the app is for convenience; access
     control is enforced by `firestore.rules`.
+-   Users cannot give themselves the Admin role, edit others' reports,
+    send others arbitrary notifications, or read chats they are not
+    part of. Chat messages live under `chats/{chatId}/messages`.
 
 ## License
 

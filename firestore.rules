@@ -42,10 +42,14 @@ service cloud.firestore {
     }
 
     // Lost Items Collection
+    // Owners cannot hand a report over to someone else by rewriting ownerId.
     match /lostItems/{itemId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (
+        isOwner(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId
+      );
       allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
@@ -53,7 +57,10 @@ service cloud.firestore {
     match /foundItems/{itemId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.finderId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.finderId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (
+        isOwner(resource.data.finderId)
+        && request.resource.data.finderId == resource.data.finderId
+      );
       allow delete: if isAuthenticated() && (resource.data.finderId == request.auth.uid || isAdmin());
     }
 
@@ -80,27 +87,75 @@ service cloud.firestore {
     }
 
     // Notifications Collection
+    // Users may only notify others about things they own: a broadcast about their
+    // own new report (COMMON), or a claim they submitted (CLAIM_SUBMITTED to admin).
+    function ownsReportedItem(data) {
+      return (data.itemType == 'LOST'
+                && get(/databases/$(database)/documents/lostItems/$(data.targetId)).data.ownerId == request.auth.uid)
+          || (data.itemType == 'FOUND'
+                && get(/databases/$(database)/documents/foundItems/$(data.targetId)).data.finderId == request.auth.uid);
+    }
+
+    function ownsSubmittedClaim(data) {
+      return data.userId == 'admin'
+          && get(/databases/$(database)/documents/claims/$(data.targetId)).data.claimantId == request.auth.uid;
+    }
+
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid
+        || (request.resource.data.type == 'COMMON' && ownsReportedItem(request.resource.data))
+        || (request.resource.data.type == 'CLAIM_SUBMITTED' && ownsSubmittedClaim(request.resource.data))
+        || isAdmin()
+      );
+      // Recipients can only mark their notifications as read, not rewrite them.
+      allow update: if isAdmin() || (
+        isOwner(resource.data.userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead'])
+      );
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Chats Collection
-    match /chats/{chatId} {
-      allow read, write: if isAuthenticated() && (request.auth.uid in resource.data.participantIds || isAdmin());
+    // A chat is between exactly two people (owner and finder); the creator must be one of them.
+    function isChatParticipant(chatId) {
+      return request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
     }
 
-    // Messages Collection
-    match /messages/{messageId} {
-      allow read, write: if isAuthenticated();
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participantIds || isAdmin());
+      allow create: if isAuthenticated()
+                    && request.resource.data.participantIds is list
+                    && request.resource.data.participantIds.size() == 2
+                    && request.auth.uid in request.resource.data.participantIds;
+      allow update: if isAdmin() || (
+        isAuthenticated()
+        && request.auth.uid in resource.data.participantIds
+        && request.resource.data.participantIds == resource.data.participantIds
+      );
+      allow delete: if isAdmin();
+
+      // Messages live under their chat so only its participants can see them.
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (isChatParticipant(chatId) || isAdmin());
+        allow create: if isAuthenticated()
+                      && isChatParticipant(chatId)
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000;
+        allow update: if isAuthenticated()
+                      && isChatParticipant(chatId)
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+        allow delete: if isAdmin();
+      }
     }
 
     // Activity Logs Collection (Admin Dashboard)
-    // Only admins can read logs. Any authenticated action can create a log entry.
+    // Only admin pages write logs, so only admins may create or read them.
     match /activityLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAuthenticated();
+      allow read, create: if isAdmin();
       allow update, delete: if isAdmin();
     }
   }
