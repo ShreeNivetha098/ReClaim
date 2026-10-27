@@ -62,14 +62,6 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
     await _repo.updateUserProfile(updatedUser);
     state = updatedUser;
   }
-
-  void switchRoleForDemo(String newRole) {
-    if (state != null) {
-      final updated = state!.copyWith(role: newRole);
-      _repo.updateUserProfile(updated);
-      state = updated;
-    }
-  }
 }
 
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, UserModel?>((ref) {

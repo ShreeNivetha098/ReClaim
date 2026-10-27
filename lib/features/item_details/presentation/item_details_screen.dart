@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
@@ -8,6 +7,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/models/found_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/item_image.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../matching/presentation/potential_matches_screen.dart';
 import '../../claims/presentation/ownership_verification_screen.dart';
@@ -69,13 +69,13 @@ class ItemDetailsScreen extends ConsumerWidget {
                   ? AppColors.primary.withValues(alpha: 0.08)
                   : AppColors.secondary.withValues(alpha: 0.08),
               child: imageUrl != null && imageUrl.isNotEmpty
-                  ? CachedNetworkImage(
+                  ? ItemImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => const Center(
+                      placeholder: (context) => const Center(
                         child: CircularProgressIndicator(),
                       ),
-                      errorWidget: (context, url, error) => Icon(
+                      error: (context) => Icon(
                         isLost ? Icons.search_off : Icons.find_in_page,
                         size: 64,
                         color: AppColors.textMuted,

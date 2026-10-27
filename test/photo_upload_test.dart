@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:reclaim/shared/models/lost_item_model.dart';
 import 'package:reclaim/shared/models/found_item_model.dart';
+import 'package:reclaim/core/services/image_store_service.dart';
 import 'package:reclaim/core/services/reclaim_repository.dart';
 import 'package:reclaim/shared/widgets/item_card.dart';
 
@@ -115,9 +116,26 @@ void main() {
       final repo = ReClaimRepository();
       final dummyBytes = Uint8List.fromList([0, 1, 2, 3, 4]);
 
-      final url = await repo.uploadImageBytes(dummyBytes, 'lost_items');
+      final url = await repo.uploadImageBytes(dummyBytes);
       expect(url, isNotNull);
       expect(url!.isNotEmpty, isTrue);
+    });
+  });
+
+  group('ImageStoreService (Firestore photo storage)', () {
+    test('recognises Firestore photo references and ignores web URLs', () {
+      expect(ImageStoreService.isStoredRef('firestore:itemImages/abc-123'), isTrue);
+      expect(ImageStoreService.isStoredRef('https://example.com/photo.jpg'), isFalse);
+      expect(ImageStoreService.isStoredRef(''), isFalse);
+      expect(ImageStoreService.isStoredRef(null), isFalse);
+    });
+
+    test('rejects photos larger than the Firestore size limit before uploading', () {
+      final tooBig = Uint8List(ImageStoreService.maxBytes + 1);
+      expect(
+        () => ImageStoreService.save(tooBig, uploaderId: 'user_1'),
+        throwsArgumentError,
+      );
     });
   });
 

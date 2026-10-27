@@ -41,6 +41,8 @@ coverage/
 # Firebase generated files
 firebase-debug.log
 firebase-debug.*.log
+firestore-debug.log
+node_modules/
 
 # Android generated files
 android/.gradle/
@@ -66,8 +68,12 @@ ios/Flutter/.last_build_id
 Project Abstract.pdf
 Project Abstract.docx
 ReClaim_ProgressReport.pdf
+*.pdf
+*.doc
 *.docx
 *.pptx
+*.xlsx
+*.csv
 
 # Firebase project config (contains API keys; get from Firebase console)
 android/app/google-services.json
@@ -91,6 +97,21 @@ secrets/
 *.p12
 *.p8
 *.mobileprovision
+
+# Apple signing and App Store credentials
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/.env*
+AuthKey_*.p8
+xcuserdata/
+
+# Local tool settings (may hold personal paths or tokens)
+.claude/settings.local.json
+*.log
 
 # Android signing keys
 *.jks
