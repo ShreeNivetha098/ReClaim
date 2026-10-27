@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,6 +8,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../shared/models/lost_item_model.dart';
 import '../../../../shared/models/found_item_model.dart';
 import '../../../../core/providers/app_providers.dart';
+import '../../../../shared/widgets/item_image.dart';
 
 class AdminItemDetailsDialog extends ConsumerWidget {
   final dynamic item;
@@ -230,11 +230,11 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                       child: Stack(
                         children: [
                           InteractiveViewer(
-                            child: CachedNetworkImage(
+                            child: ItemImage(
                               imageUrl: imageUrl,
                               fit: BoxFit.contain,
-                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                              errorWidget: (context, url, error) => const Center(child: Icon(Icons.error, color: AppColors.error)),
+                              placeholder: (context) => const Center(child: CircularProgressIndicator()),
+                              error: (context) => const Center(child: Icon(Icons.error, color: AppColors.error)),
                             ),
                           ),
                           Positioned(
@@ -250,11 +250,11 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                     ),
                   );
                 },
-                child: CachedNetworkImage(
+                child: ItemImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) => _buildNoImage(isLost),
+                  placeholder: (context) => const Center(child: CircularProgressIndicator()),
+                  error: (context) => _buildNoImage(isLost),
                 ),
               ),
             )

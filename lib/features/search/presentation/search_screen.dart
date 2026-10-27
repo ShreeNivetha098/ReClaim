@@ -227,7 +227,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                       padding: const EdgeInsets.all(16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.65,
+                        childAspectRatio: 0.62,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),
@@ -297,7 +297,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> with SingleTickerPr
                       padding: const EdgeInsets.all(16),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        childAspectRatio: 0.65,
+                        childAspectRatio: 0.62,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
                       ),

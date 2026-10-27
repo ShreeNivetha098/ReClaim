@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../shared/models/user_model.dart';
 import '../../shared/models/lost_item_model.dart';
@@ -13,6 +11,7 @@ import '../../shared/models/chat_message_model.dart';
 import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/notification_model.dart';
 import 'firebase_service.dart';
+import 'image_store_service.dart';
 import '../constants/app_constants.dart';
 
 class ReClaimRepository {
@@ -213,45 +212,13 @@ class ReClaimRepository {
   // IMAGE UPLOAD
   // ---------------------------------------------------------------------------
 
-  Future<String?> uploadImageBytes(
-    Uint8List bytes,
-    String folderPath, {
-    String? fileName,
-    String? contentType,
-  }) async {
+  /// Saves a photo in Firestore and returns the reference for `imageUrl`.
+  Future<String?> uploadImageBytes(Uint8List bytes) async {
     if (FirebaseService.isInitialized) {
-      try {
-        final name = fileName ?? '${_uuid.v4()}.jpg';
-        final ref = FirebaseService.storage.ref().child('$folderPath/$name');
-        debugPrint('--- UPLOAD DIAGNOSTICS ---');
-        debugPrint('Bucket: ${FirebaseService.storage.bucket}');
-        debugPrint('Ref fullPath: ${ref.fullPath}');
-        debugPrint('Bytes length: ${bytes.length}');
-        debugPrint('Folder path: $folderPath');
-        debugPrint('File name: $name');
-        final metadata = SettableMetadata(
-          contentType: contentType ?? 'image/jpeg',
-        );
-        debugPrint('Starting putData...');
-        final uploadTask = await ref.putData(bytes, metadata);
-        debugPrint('putData finished successfully. Bytes transferred: ${uploadTask.bytesTransferred}');
-        debugPrint('Starting getDownloadURL...');
-        final downloadUrl = await uploadTask.ref.getDownloadURL();
-        debugPrint('getDownloadURL finished successfully. URL: $downloadUrl');
-        return downloadUrl;
-      } catch (e, stackTrace) {
-        debugPrint('Firebase Storage Upload Error: $e');
-        debugPrint('Stack trace: $stackTrace');
-        rethrow;
-      }
+      return ImageStoreService.save(bytes, uploaderId: _currentUser?.uid ?? '');
     }
     // Fallback for local mock testing when Firebase is not initialized
     return 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80';
-  }
-
-  Future<String?> uploadImage(File file, String folderPath) async {
-    final bytes = await file.readAsBytes();
-    return uploadImageBytes(bytes, folderPath);
   }
 
   // ---------------------------------------------------------------------------

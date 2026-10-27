@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_styles.dart';
 import '../../core/utils/date_formatter.dart';
 import 'custom_card.dart';
+import 'item_image.dart';
 import 'status_chip.dart';
 
 class ItemCard extends StatelessWidget {
@@ -64,16 +64,16 @@ class ItemCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(AppStyles.radiusMd),
                         ),
-                        child: CachedNetworkImage(
+                        child: ItemImage(
                           imageUrl: imageUrl!,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
+                          placeholder: (context) => Container(
                             color: AppColors.divider.withValues(alpha: 0.3),
                             child: const Center(
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ),
-                          errorWidget: (context, url, error) => Icon(
+                          error: (context) => Icon(
                             isLost ? Icons.search_off : Icons.find_in_page,
                             size: 40,
                             color: AppColors.textMuted,

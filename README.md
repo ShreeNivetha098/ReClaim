@@ -26,14 +26,15 @@ Firebase plan or a paid Apple Developer account.
     marks both items as claimed.
 -   **Admin dashboard**: users, lost and found reports, claims, items
     unclaimed after 30 days, activity log and statistics.
+-   **Item photos** saved in Firestore: photos are shrunk to at most
+    1024 px on the phone and stored in the `itemImages` collection (see
+    [Free-plan design](#free-plan-design)).
 
 ### In progress
 See [Roadmap](#roadmap) for details.
 -   Matching in both directions (a new found report should alert the
     owner of a matching lost report).
 -   Edit, delete and "mark as recovered" for a user's own reports.
--   Photo storage moved from Firebase Storage to Firestore (see
-    [Free-plan design](#free-plan-design)).
 -   Local notifications for new matches and claim decisions.
 -   Security-rule fixes and automated rule tests.
 
@@ -78,7 +79,15 @@ differently from a typical production app:
     `ios/GoogleService-Info.plist`. This file is in `.gitignore` and is
     never committed.
 3.  Enable **Email/Password** sign-in under Authentication.
-4.  Create a Cloud Firestore database and deploy `firestore.rules`.
+4.  Create a Cloud Firestore database.
+5.  Deploy the security rules with the Firebase CLI (free on the Spark
+    plan):
+    ``` bash
+    brew install firebase-cli
+    firebase login
+    firebase deploy --only firestore:rules --project <your-project-id>
+    ```
+    Photo uploads are refused until these rules are deployed.
 
 ### Build and run
 ``` bash
@@ -148,7 +157,7 @@ flutter analyze
 flutter test
 ```
 
-Latest run: **28 tests passing** and **no analyzer issues**.
+Latest run: **30 tests passing** and **no analyzer issues**.
 
 ## Roadmap
 
@@ -156,7 +165,7 @@ Planned work, all within the free Firebase plan:
 
 1.  **Done:** iOS-only cleanup (Android, web and remote-push code
     removed; photo-library permission added).
-2.  Move item photos from Firebase Storage into Firestore.
+2.  **Done:** Move item photos from Firebase Storage into Firestore.
 3.  Fix Firestore security rules (chat messages, notifications, chat
     creation) and remove the demo role-switch button.
 4.  Match in both directions and add local notifications for new

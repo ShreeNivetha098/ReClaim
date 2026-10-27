@@ -57,6 +57,19 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (resource.data.finderId == request.auth.uid || isAdmin());
     }
 
+    // Item Photos Collection
+    // Photos are stored as bytes in Firestore because Firebase Storage needs the paid Blaze plan.
+    // Size is capped below Firestore's 1 MiB document limit; photos cannot be edited, only replaced.
+    match /itemImages/{imageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && request.resource.data.uploaderId == request.auth.uid
+                    && request.resource.data.data is bytes
+                    && request.resource.data.data.size() <= 900 * 1024;
+      allow update: if false;
+      allow delete: if isAuthenticated() && (resource.data.uploaderId == request.auth.uid || isAdmin());
+    }
+
     // Claims Collection
     match /claims/{claimId} {
       allow read: if isAuthenticated() && (resource.data.claimantId == request.auth.uid || isAdmin());

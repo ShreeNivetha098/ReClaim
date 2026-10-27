@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/services/image_store_service.dart';
 import '../../../shared/models/found_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
@@ -60,7 +61,12 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
     if (_isSubmitting) return;
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: ImageStoreService.pickerMaxDimension,
+        maxHeight: ImageStoreService.pickerMaxDimension,
+        imageQuality: ImageStoreService.pickerQuality,
+      );
       if (picked != null) {
         final bytes = await picked.readAsBytes();
         setState(() {
@@ -103,7 +109,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
 
       String? uploadedImageUrl;
       if (_imageBytes != null) {
-        uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!, 'found_items');
+        uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!);
       }
 
       final now = DateTime.now();
