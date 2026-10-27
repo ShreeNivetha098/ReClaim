@@ -1,188 +1,181 @@
-# ReClaim --- Lost & Found App
+# ReClaim --- Smart Lost & Found for PSG Tech
 
-ReClaim is a Flutter-based lost-and-found application designed to help
-people report missing belongings and discover potentially matching found
-items. It uses Firebase for authentication and cloud storage, with
-client-side matching to surface potential matches in the app.
+ReClaim is an **iOS** app, built with Flutter, that gives a college campus
+one place to report lost and found items, find likely matches between
+them, and return items to their owners after an ownership check.
+
+The project targets **iPhone only** and runs entirely on the **free
+Firebase Spark plan**. No feature in this project requires a paid
+Firebase plan or a paid Apple Developer account.
 
 ## Features
 
--   **User authentication** with Firebase Authentication.
--   **PSG Tech email validation**: registration and login validate
-    institutional email addresses ending in `@psgtech.ac.in`.
--   **Lost-item reports** stored in Cloud Firestore.
--   **Found-item reports** stored in Cloud Firestore.
--   **Smart matching** that compares report details such as category,
-    title/description, brand, colour, location, and date.
--   **Home-feed match cards** that update as report data changes.
--   **In-app new-match alerts** with a **View Match** action when a new
-    potential match is detected during the active app session.
--   **Potential-match screens** for inspecting candidate matches.
--   **Firebase Cloud Messaging groundwork** for push notifications;
-    end-to-end background push delivery is not yet confirmed.
+### Working now
+-   **Sign-up and login** with Firebase Authentication (email and
+    password).
+-   **PSG Tech email check**: only addresses ending in `@psgtech.ac.in`
+    can register or log in.
+-   **Lost and found reports** stored in Cloud Firestore.
+-   **Smart matching** that scores lost reports against found reports
+    by category, name/description keywords, brand, colour, location and
+    date. Matching runs on the phone.
+-   **Potential-match banner** on the home screen, with a screen listing
+    candidate matches.
+-   **Claims**: a user claims a found item by answering ownership
+    questions; an admin approves or rejects the claim, and approval
+    marks both items as claimed.
+-   **Admin dashboard**: users, lost and found reports, claims, items
+    unclaimed after 30 days, activity log and statistics.
+
+### In progress
+See [Roadmap](#roadmap) for details.
+-   Matching in both directions (a new found report should alert the
+    owner of a matching lost report).
+-   Edit, delete and "mark as recovered" for a user's own reports.
+-   Photo storage moved from Firebase Storage to Firestore (see
+    [Free-plan design](#free-plan-design)).
+-   Local notifications for new matches and claim decisions.
+-   Security-rule fixes and automated rule tests.
 
 ## Tech Stack
 
--   **Frontend:** Flutter, Dart
+-   **App:** Flutter and Dart, iOS only
 -   **State management:** Riverpod
--   **Backend services:** Firebase Authentication, Cloud Firestore,
-    Firebase Cloud Messaging (notification setup in progress)
--   **Platforms:** Flutter web and Android development targets
+-   **Navigation:** go_router
+-   **Backend:** Firebase Authentication and Cloud Firestore (Spark plan)
 
-## How Smart Matching Works
+## Free-plan design
 
-ReClaim calculates a match score by comparing details from lost and
-found reports. The matching service considers fields such as:
+Because the project must stay on the free Firebase Spark plan and must
+not need a paid Apple Developer account, some features are designed
+differently from a typical production app:
 
--   Item category
--   Item name and description
--   Brand
--   Colour
--   Location
--   Date
+| Need | Usual approach | ReClaim's free approach |
+|---|---|---|
+| Item photos | Firebase Storage | Compressed photos (about 100 KB) saved in Firestore. Since February 2026, Firebase Storage needs the paid Blaze plan. |
+| Match alerts | Remote push (FCM + APNs) | Firestore real-time listeners plus local notifications. Remote push on iOS needs a paid Apple Developer account and a server. |
+| Matching | Cloud Functions | Runs on the phone. Cloud Functions need the Blaze plan. |
+| Testing on iPhone | TestFlight | iOS Simulator, or a personal iPhone signed with a free Apple ID. |
 
-Reports that meet the configured match threshold can appear as potential
-matches in the app. Matching is currently performed on the client using
-the existing Dart matching service.
-
-## In-App Match Alerts
-
-When a newly detected potential match appears while ReClaim is open, the
-app can display an in-app snackbar with a **View Match** action. The
-alert logic tracks match pairs during the session to avoid repeatedly
-alerting for the same match and to avoid alerting on matches already
-present during initial setup.
-
-This is an **in-app alert**, not a guarantee of a system-level browser
-or mobile push notification. Background push delivery requires a
-functioning message-sending backend and complete platform configuration;
-this has not been verified end to end.
-
-## Firebase Setup
-
-To run your own instance, create a Firebase project and configure the
-Flutter app for it.
-
-1.  Install the Flutter SDK and verify your setup with `flutter doctor`.
-2.  Configure Firebase for the platforms you intend to run.
-3.  Add the platform-specific Firebase configuration files using the
-    official FlutterFire setup process.
-4.  Enable **Email/Password** authentication in Firebase Authentication.
-5.  Create a Cloud Firestore database and configure security rules
-    appropriate for your application.
-6.  Confirm that the app's institutional email validation matches your
-    intended domain.
-
-> **Security note:** Never commit private keys, service-account JSON
-> files, access tokens, or other secrets to GitHub. Review Firebase
-> security rules before using real user data. Client-side email
-> validation is a user-experience check and should not replace
-> appropriate security rules or trusted backend validation.
+**Known limits of this design:**
+-   Alerts reach a user only while the app is open or recently in the
+    background, not when it has been fully closed.
+-   Apps installed on a real iPhone with a free Apple ID stop opening
+    after 7 days and must be reinstalled from Xcode.
 
 ## Run Locally
 
-Clone the repository and enter the project directory:
+### Requirements
+-   macOS with **Xcode** (the project was last built with Xcode 26.2)
+-   **Flutter SDK** (stable channel); check with `flutter doctor`
+-   A Firebase project with an iOS app registered for the bundle ID
+    `com.reclaim.app.reclaim`
 
-``` bash
-git clone <YOUR_REPOSITORY_URL>
-cd ReClaim
-```
+### Firebase setup
+1.  In the Firebase console, add an iOS app with bundle ID
+    `com.reclaim.app.reclaim`.
+2.  Download `GoogleService-Info.plist` and place it at
+    `ios/GoogleService-Info.plist`. This file is in `.gitignore` and is
+    never committed.
+3.  Enable **Email/Password** sign-in under Authentication.
+4.  Create a Cloud Firestore database and deploy `firestore.rules`.
 
-Install dependencies:
-
+### Build and run
 ``` bash
 flutter pub get
-```
-
-Run static analysis and tests:
-
-``` bash
 flutter analyze
 flutter test
-```
-
-Run the web app in Chrome:
-
-``` bash
-flutter run -d chrome
-```
-
-For Android, start an emulator or connect a device and run:
-
-``` bash
-flutter devices
+open -a Simulator
 flutter run
 ```
 
-Your local Firebase configuration must be in place before using
-Firebase-backed features.
+> **Keep the project folder out of iCloud Drive.** If `~/Documents` or
+> `~/Desktop` syncs to iCloud, iOS builds fail with *"resource fork,
+> Finder information, or similar detritus not allowed"*. Keep the
+> project in a folder that iCloud doesn't sync, such as `~/Developer`.
+
+To run on your own iPhone, open `ios/Runner.xcworkspace` in Xcode,
+choose your Apple ID team under *Signing & Capabilities*, connect the
+phone, and run `flutter run`.
 
 ## Project Structure
-
-The main application code is organized under `lib/`:
 
 ``` text
 lib/
 ├── core/
-│   ├── constants/
-│   ├── providers/
-│   └── services/
+│   ├── constants/    app-wide constants, colours, strings
+│   ├── providers/    Riverpod providers
+│   ├── routes/       go_router configuration
+│   ├── services/     Firebase, repository and matching logic
+│   └── theme/
 ├── features/
+│   ├── admin/            admin dashboard
+│   ├── authentication/   login, register, password reset
+│   ├── claims/           ownership verification
+│   ├── found_items/      report a found item
 │   ├── home/
 │   ├── item_details/
-│   └── matching/
+│   ├── lost_items/       report a lost item
+│   ├── matching/         potential matches
+│   ├── notifications/
+│   ├── profile/          profile and "My Reports"
+│   └── search/
 └── shared/
-    └── models/
+    ├── models/
+    └── widgets/
 ```
 
--   `core/services/` contains application services, including matching,
-    repository, and notification logic.
--   `core/providers/` contains Riverpod providers used to expose
-    reactive application data.
--   `features/` contains feature-specific screens and presentation
-    logic.
--   `shared/models/` contains data models used across features.
+## How Smart Matching Works
+
+`lib/core/services/matching_service.dart` gives each lost/found pair a
+score out of 100:
+
+| Attribute | Weight |
+|---|---|
+| Category | 25 |
+| Item name and description keywords | 25 |
+| Brand | 15 |
+| Location | 15 |
+| Colour | 10 |
+| Date proximity | 10 |
+
+Pairs that score at or above the threshold appear as potential matches.
 
 ## Testing
 
-Run the complete Flutter test suite with:
-
-``` bash
-flutter test
-```
-
-Run static analysis with:
-
-``` bash
-flutter analyze
-```
-
-The latest development run reported **44 passing tests** and no Flutter
-analyzer issues after the in-app match-alert changes. Results may differ
-as the project evolves.
-
-## Current Status
-
--   Lost/found report matching and home-feed match cards: implemented.
--   In-app alerts for newly detected matches while the app is open:
-    implemented and manually tested.
--   Firebase Authentication and Firestore integration: implemented for
-    the app's current scope.
--   Browser/mobile background push notifications: configuration and
-    delivery still require further verification.
--   Cloud Functions deployment: not performed.
-
-## Contributing
-
-Suggestions and bug reports are welcome. Before submitting changes, run:
-
 ``` bash
 flutter analyze
 flutter test
 ```
+
+Latest run: **28 tests passing** and **no analyzer issues**.
+
+## Roadmap
+
+Planned work, all within the free Firebase plan:
+
+1.  **Done:** iOS-only cleanup (Android, web and remote-push code
+    removed; photo-library permission added).
+2.  Move item photos from Firebase Storage into Firestore.
+3.  Fix Firestore security rules (chat messages, notifications, chat
+    creation) and remove the demo role-switch button.
+4.  Match in both directions and add local notifications for new
+    matches and claim decisions.
+5.  Add edit, delete and "mark as recovered" to My Reports; let the
+    finder record a hidden detail for ownership checks.
+6.  Add automated tests for matching and for security rules (Firebase
+    emulator).
+7.  Decide on in-app chat (Firestore-based) and on-device image
+    analysis, or keep them as future work.
+
+## Security Notes
+
+-   `GoogleService-Info.plist`, `.env` files and signing keys are in
+    `.gitignore`; never commit them.
+-   The PSG Tech email check in the app is for convenience; access
+    control is enforced by `firestore.rules`.
 
 ## License
 
-No license has been specified yet. Unless a license is added to this
-repository, all rights remain with the copyright holder and reuse is not
-automatically granted.
+No license has been specified. All rights remain with the copyright
+holder, and reuse is not granted by default.

@@ -15,19 +15,8 @@ class FirebaseService {
         _isFirebaseInitialized = true;
         return;
       }
-      if (kIsWeb) {
-        await Firebase.initializeApp(
-          options: const FirebaseOptions(
-            apiKey: 'AIzaSyBz0zJ9lzp38DODY1VwAUHgiSDfHxZYBts',
-            appId: '1:460524298187:web:reclaim',
-            messagingSenderId: '460524298187',
-            projectId: 'reclaim-c4695',
-            storageBucket: 'reclaim-c4695.appspot.com',
-          ),
-        );
-      } else {
-        await Firebase.initializeApp();
-      }
+      // iOS reads its configuration from ios/GoogleService-Info.plist.
+      await Firebase.initializeApp();
       _isFirebaseInitialized = true;
       debugPrint('Firebase initialized successfully.');
     } catch (e) {
