@@ -61,3 +61,38 @@ ios/Flutter/.last_build_id
 # IntelliJ / Android Studio
 .idea/
 *.iml
+
+# Personal project documents (keep local only)
+Project Abstract.pdf
+Project Abstract.docx
+ReClaim_ProgressReport.pdf
+*.docx
+*.pptx
+
+# Firebase project config (contains API keys; get from Firebase console)
+android/app/google-services.json
+ios/GoogleService-Info.plist
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+.firebaserc
+.firebase/
+firebase-adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.secret
+secrets/
+*.pem
+*.p12
+*.p8
+*.mobileprovision
+
+# Android signing keys
+*.jks
+*.keystore
+android/key.properties

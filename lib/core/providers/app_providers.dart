@@ -10,7 +10,6 @@ import '../../shared/models/match_result_model.dart';
 import '../../shared/models/notification_model.dart';
 import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/chat_message_model.dart';
-import '../services/push_notification_service.dart';
 
 // Single repository instance provider
 final repositoryProvider = Provider<ReClaimRepository>((ref) {
@@ -26,13 +25,8 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
   }
 
   Future<void> _init() async {
-  final user = await _repo.checkCurrentUser();
-  state = user;
-
-  if (user != null) {
-    await PushNotificationService.registerDeviceForUser(user.uid);
+    state = await _repo.checkCurrentUser();
   }
-}
 
   Future<void> register({
     required String name,
@@ -53,20 +47,16 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
       role: role,
     );
     state = user;
-    await PushNotificationService.registerDeviceForUser(user.uid);
   }
 
   Future<void> login(String email, String password) async {
-  final user = await _repo.loginUser(email: email, password: password);
-  state = user;
-  await PushNotificationService.registerDeviceForUser(user.uid);
-}
+    state = await _repo.loginUser(email: email, password: password);
+  }
 
   Future<void> logout() async {
-  await PushNotificationService.unregisterDevice();
-  await _repo.logoutUser();
-  state = null;
-}
+    await _repo.logoutUser();
+    state = null;
+  }
 
   Future<void> updateProfile(UserModel updatedUser) async {
     await _repo.updateUserProfile(updatedUser);
