@@ -139,6 +139,30 @@ describe('notifications', () => {
     await assertSucceeds(batch.commit());
   });
 
+  const match = (overrides) => ({
+    userId: STUDENT, title: 'Possible match for your Wallet (80%)', body: 'Body',
+    type: 'POTENTIAL_MATCH', targetId: 'found1', itemType: 'FOUND', lostItemId: 'lost1',
+    isRead: false, ...overrides,
+  });
+
+  test('a finder can send a match notification to the lost report owner', async () => {
+    await assertSucceeds(setDoc(doc(db(OTHER), 'notifications', 'match_lost1_found1'), match({})));
+  });
+
+  test('a match notification cannot go to someone who does not own the lost report', async () => {
+    await assertFails(setDoc(doc(db(OTHER), 'notifications', 'x'), match({ userId: ADMIN })));
+  });
+
+  test("a match notification cannot be sent about someone else's found item", async () => {
+    await assertFails(setDoc(doc(db('outsider'), 'notifications', 'x'), match({})));
+  });
+
+  test('the same match notification cannot be sent twice', async () => {
+    const ref = (uid) => doc(db(uid), 'notifications', 'match_lost1_found1');
+    await assertSucceeds(setDoc(ref(OTHER), match({})));
+    await assertFails(setDoc(ref(OTHER), match({ title: 'again' })));
+  });
+
   test('a claim notification to admin needs a claim the sender filed', async () => {
     const claimNotif = { userId: 'admin', type: 'CLAIM_SUBMITTED', title: 't', body: 'b', isRead: false };
     await assertSucceeds(setDoc(doc(db(STUDENT), 'notifications', 'x'), { ...claimNotif, targetId: 'claim1' }));

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/services/local_notification_service.dart';
+import '../../../shared/models/notification_model.dart';
+import '../../notifications/presentation/notification_navigation.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../search/presentation/search_screen.dart';
 import '../../notifications/presentation/notifications_screen.dart';
@@ -21,10 +24,48 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   late int _selectedIndex;
 
+  /// Notification IDs already on screen; null until the first snapshot so
+  /// older notifications do not raise banners when the app opens.
+  Set<String>? _seenNotificationIds;
+
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _setUpMatchBanners();
+  }
+
+  @override
+  void dispose() {
+    LocalNotificationService.onTap = null;
+    super.dispose();
+  }
+
+  Future<void> _setUpMatchBanners() async {
+    LocalNotificationService.onTap = (payload) {
+      if (mounted) openMatchPayload(context, ref, payload);
+    };
+    final launchPayload = await LocalNotificationService.initialize();
+    if (launchPayload != null && mounted) {
+      openMatchPayload(context, ref, launchPayload);
+    }
+  }
+
+  /// Raises an iOS banner for each new match notification addressed to this user.
+  void _onNotificationsChanged(List<NotificationModel> notifications) {
+    final seen = _seenNotificationIds;
+    _seenNotificationIds = notifications.map((n) => n.id).toSet();
+    if (seen == null) return;
+
+    for (final notif in notifications) {
+      if (seen.contains(notif.id) || notif.isRead || notif.type != 'POTENTIAL_MATCH') continue;
+      LocalNotificationService.show(
+        id: notif.id,
+        title: notif.title,
+        body: notif.body,
+        payload: matchPayload(notif.id, notif.targetId),
+      );
+    }
   }
 
   void _onItemTapped(int index) {
@@ -148,6 +189,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final unreadNotifsCount = ref.watch(unreadNotificationsCountProvider);
+    ref.listen<AsyncValue<List<NotificationModel>>>(notificationsProvider, (_, next) {
+      next.whenData(_onNotificationsChanged);
+    });
 
     final screens = [
       HomeScreen(

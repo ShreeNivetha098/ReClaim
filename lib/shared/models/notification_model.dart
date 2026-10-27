@@ -8,6 +8,7 @@ class NotificationModel {
   final String type; // COMMON, POTENTIAL_MATCH, CLAIM_SUBMITTED, CLAIM_APPROVED, CLAIM_REJECTED, NEW_MESSAGE, ITEM_RETURNED
   final String targetId; // itemId, claimId, or chatId
   final String? itemType; // LOST, FOUND, or null
+  final String? lostItemId; // for POTENTIAL_MATCH: the recipient's lost report
   final bool isRead;
   final DateTime createdAt;
 
@@ -19,6 +20,7 @@ class NotificationModel {
     required this.type,
     required this.targetId,
     this.itemType,
+    this.lostItemId,
     this.isRead = false,
     required this.createdAt,
   });
@@ -32,6 +34,7 @@ class NotificationModel {
       type: map['type'] ?? 'COMMON',
       targetId: map['targetId'] ?? map['itemId'] ?? '',
       itemType: map['itemType'],
+      lostItemId: map['lostItemId'],
       isRead: map['isRead'] ?? false,
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
@@ -51,6 +54,7 @@ class NotificationModel {
       'targetId': targetId,
       'itemId': targetId,
       if (itemType != null) 'itemType': itemType,
+      if (lostItemId != null) 'lostItemId': lostItemId,
       'isRead': isRead,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -64,6 +68,7 @@ class NotificationModel {
     String? type,
     String? targetId,
     String? itemType,
+    String? lostItemId,
     bool? isRead,
     DateTime? createdAt,
   }) {
@@ -75,6 +80,7 @@ class NotificationModel {
       type: type ?? this.type,
       targetId: targetId ?? this.targetId,
       itemType: itemType ?? this.itemType,
+      lostItemId: lostItemId ?? this.lostItemId,
       isRead: isRead ?? this.isRead,
       createdAt: createdAt ?? this.createdAt,
     );

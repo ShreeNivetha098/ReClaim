@@ -10,8 +10,10 @@ import '../../shared/models/claim_model.dart';
 import '../../shared/models/chat_message_model.dart';
 import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/notification_model.dart';
+import '../../shared/models/match_result_model.dart';
 import 'firebase_service.dart';
 import 'image_store_service.dart';
+import 'matching_service.dart';
 import '../constants/app_constants.dart';
 
 class ReClaimRepository {
@@ -276,6 +278,12 @@ class ReClaimRepository {
       debugPrint('Notification creation failed for lost item ${newItem.id}: $notificationError');
     }
 
+    try {
+      await _notifyMatchesForLostItem(newItem);
+    } catch (e) {
+      debugPrint('Match notification failed for lost item ${newItem.id}: $e');
+    }
+
     return newItem;
   }
 
@@ -332,6 +340,23 @@ class ReClaimRepository {
     return List.unmodifiable(_mockFoundItems);
   }
 
+  Future<FoundItemModel?> getFoundItemById(String itemId) async {
+    if (FirebaseService.isInitialized) {
+      try {
+        final doc = await FirebaseService.firestore.collection('foundItems').doc(itemId).get();
+        if (doc.exists && doc.data() != null) {
+          return FoundItemModel.fromMap(doc.data()!, doc.id);
+        }
+      } catch (e) {
+        debugPrint('Firestore getFoundItemById error: $e');
+      }
+    }
+    for (final item in _mockFoundItems) {
+      if (item.id == itemId) return item;
+    }
+    return null;
+  }
+
   Future<FoundItemModel> createFoundItem(FoundItemModel item) async {
     final newItem = item.copyWith(
       id: item.id.isEmpty ? _uuid.v4() : item.id,
@@ -364,6 +389,12 @@ class ReClaimRepository {
       );
     } catch (notificationError) {
       debugPrint('Notification creation failed for found item ${newItem.id}: $notificationError');
+    }
+
+    try {
+      await _notifyMatchesForFoundItem(newItem);
+    } catch (e) {
+      debugPrint('Match notification failed for found item ${newItem.id}: $e');
     }
 
     return newItem;
@@ -737,6 +768,76 @@ Future<void> updateClaimStatus(String claimId, String newStatus) async {
       );
     }
     _notifyMockNotificationsChanged();
+  }
+
+  // ---------------------------------------------------------------------------
+  // MATCH NOTIFICATIONS
+  // ---------------------------------------------------------------------------
+
+  /// Notifies the owners of lost reports that strongly match a new found item.
+  /// Only the lost report's owner is told, never the finder.
+  Future<void> _notifyMatchesForFoundItem(FoundItemModel foundItem) async {
+    final matches = MatchingService.findMatchesForFoundItem(
+      foundItem: foundItem,
+      lostItems: await getLostItems(),
+      minThreshold: MatchingService.notifyThreshold,
+    );
+    for (final match in matches) {
+      await _sendMatchNotification(match);
+    }
+  }
+
+  /// Tells the reporter of a new lost item about found items that already match it.
+  Future<void> _notifyMatchesForLostItem(LostItemModel lostItem) async {
+    final matches = MatchingService.findMatchesForLostItem(
+      lostItem: lostItem,
+      foundItems: await getFoundItems(),
+      minThreshold: MatchingService.notifyThreshold,
+    );
+    for (final match in matches) {
+      await _sendMatchNotification(match);
+    }
+  }
+
+  /// Sends one notification per lost/found pair to the lost report's owner.
+  /// The document ID is fixed per pair, so a pair is never notified twice:
+  /// rewriting an existing notification is refused by the security rules.
+  Future<void> _sendMatchNotification(MatchResultModel match) async {
+    final lost = match.lostItem;
+    final found = match.foundItem;
+    final notif = NotificationModel(
+      id: 'match_${lost.id}_${found.id}',
+      userId: lost.ownerId,
+      title: 'Possible match for your ${lost.itemName} '
+          '(${match.matchPercentage.toStringAsFixed(0)}%)',
+      body: '${_buildNotificationMessage(
+        itemName: found.itemName,
+        colour: found.colour,
+        location: found.locationFound,
+        isLost: false,
+      )} Tap to check if it is yours.',
+      type: 'POTENTIAL_MATCH',
+      targetId: found.id,
+      itemType: 'FOUND',
+      lostItemId: lost.id,
+      createdAt: DateTime.now(),
+    );
+
+    if (FirebaseService.isInitialized) {
+      try {
+        await FirebaseService.firestore
+            .collection('notifications')
+            .doc(notif.id)
+            .set(notif.toMap());
+      } catch (e) {
+        debugPrint('Match notification ${notif.id} not sent (already sent or denied): $e');
+      }
+    }
+
+    if (_mockNotifications.every((n) => n.id != notif.id)) {
+      _mockNotifications.insert(0, notif);
+      _notifyMockNotificationsChanged();
+    }
   }
 
   Future<List<NotificationModel>> getNotifications(String userId) async {

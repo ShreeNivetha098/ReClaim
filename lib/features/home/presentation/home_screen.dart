@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/models/lost_item_model.dart';
+import '../../../shared/models/match_result_model.dart';
 import '../../../shared/widgets/item_card.dart';
 import '../../lost_items/presentation/report_lost_item_screen.dart';
 import '../../found_items/presentation/report_found_item_screen.dart';
@@ -418,16 +420,28 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildPotentialMatchBanner(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue lostItemsAsync,
+    AsyncValue<List<LostItemModel>> lostItemsAsync,
   ) {
     return lostItemsAsync.when(
       data: (lostItems) {
-        if (lostItems.isEmpty) return const SizedBox.shrink();
-        final firstLost = lostItems.first;
-        final matches = ref.watch(potentialMatchesProvider(firstLost));
-        if (matches.isEmpty) return const SizedBox.shrink();
+        // Only the signed-in user's own open lost reports.
+        final uid = ref.watch(currentUserProvider)?.uid;
+        final myOpenLost = lostItems.where((item) {
+          final status = item.status.toUpperCase();
+          return item.ownerId == uid && (status == 'ACTIVE' || status == 'MATCHED');
+        });
 
-        final topMatch = matches.first;
+        // Best match across all of them.
+        MatchResultModel? topMatch;
+        for (final lost in myOpenLost) {
+          final matches = ref.watch(potentialMatchesProvider(lost));
+          if (matches.isNotEmpty &&
+              (topMatch == null || matches.first.matchPercentage > topMatch.matchPercentage)) {
+            topMatch = matches.first;
+          }
+        }
+        if (topMatch == null) return const SizedBox.shrink();
+        final firstLost = topMatch.lostItem;
 
         return Container(
           width: double.infinity,

@@ -88,7 +88,8 @@ service cloud.firestore {
 
     // Notifications Collection
     // Users may only notify others about things they own: a broadcast about their
-    // own new report (COMMON), or a claim they submitted (CLAIM_SUBMITTED to admin).
+    // own new report (COMMON), a claim they submitted (CLAIM_SUBMITTED to admin), or
+    // a match between their found item and someone's lost report (POTENTIAL_MATCH).
     function ownsReportedItem(data) {
       return (data.itemType == 'LOST'
                 && get(/databases/$(database)/documents/lostItems/$(data.targetId)).data.ownerId == request.auth.uid)
@@ -101,12 +102,21 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/claims/$(data.targetId)).data.claimantId == request.auth.uid;
     }
 
+    // A finder may tell the owner of a lost report that their found item may match it.
+    // The recipient must own the named lost report, so matches reach only that owner.
+    function isMatchForLostOwner(data) {
+      return data.itemType == 'FOUND'
+          && get(/databases/$(database)/documents/foundItems/$(data.targetId)).data.finderId == request.auth.uid
+          && get(/databases/$(database)/documents/lostItems/$(data.lostItemId)).data.ownerId == data.userId;
+    }
+
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
       allow create: if isAuthenticated() && (
         request.resource.data.userId == request.auth.uid
         || (request.resource.data.type == 'COMMON' && ownsReportedItem(request.resource.data))
         || (request.resource.data.type == 'CLAIM_SUBMITTED' && ownsSubmittedClaim(request.resource.data))
+        || (request.resource.data.type == 'POTENTIAL_MATCH' && isMatchForLostOwner(request.resource.data))
         || isAdmin()
       );
       // Recipients can only mark their notifications as read, not rewrite them.

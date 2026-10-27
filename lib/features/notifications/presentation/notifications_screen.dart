@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
+import 'notification_navigation.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -87,7 +88,14 @@ class NotificationsScreen extends ConsumerWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (isUnread) {
+                    if (notif.type == 'POTENTIAL_MATCH' && notif.targetId.isNotEmpty) {
+                      openMatchedFoundItem(
+                        context,
+                        ref,
+                        notificationId: notif.id,
+                        foundItemId: notif.targetId,
+                      );
+                    } else if (isUnread) {
                       ref.read(repositoryProvider).markNotificationAsRead(notif.id);
                     }
                   },

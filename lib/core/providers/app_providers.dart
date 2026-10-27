@@ -218,7 +218,7 @@ final potentialMatchesProvider = Provider.family<List<MatchResultModel>, LostIte
     data: (foundItems) => MatchingService.findMatchesForLostItem(
       lostItem: lostItem,
       foundItems: foundItems,
-      minThreshold: 35.0,
+      minThreshold: MatchingService.displayThreshold,
     ),
     loading: () => [],
     error: (_, _) => [],
