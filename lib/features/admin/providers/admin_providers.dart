@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/user_model.dart';
 import '../../../shared/models/activity_log_model.dart';
 import '../services/admin_repository.dart';
+import '../services/recovery_stats.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -65,6 +66,28 @@ final adminUsersProvider =
 // ---------------------------------------------------------------------------
 // DASHBOARD STATISTICS
 // ---------------------------------------------------------------------------
+
+/// Recovery statistics for the Analytics page, from the same data the
+/// dashboard already loads.
+final recoveryStatsProvider = Provider<AsyncValue<RecoveryStats>>((ref) {
+  final usersAsync = ref.watch(adminUsersProvider);
+  final lostAsync = ref.watch(lostItemsProvider);
+  final foundAsync = ref.watch(foundItemsProvider);
+  final claimsAsync = ref.watch(claimsProvider);
+
+  for (final async in [usersAsync, lostAsync, foundAsync, claimsAsync]) {
+    if (async.isLoading && !async.hasValue) return const AsyncValue.loading();
+    if (async.hasError && !async.hasValue) return AsyncValue.error(async.error!, async.stackTrace!);
+  }
+
+  return AsyncValue.data(RecoveryStats.compute(
+    lost: lostAsync.value ?? const [],
+    found: foundAsync.value ?? const [],
+    claims: claimsAsync.value ?? const [],
+    users: usersAsync.value ?? const [],
+  ));
+});
+
 
 final adminDashboardStatsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
   final usersAsync = ref.watch(adminUsersProvider);
