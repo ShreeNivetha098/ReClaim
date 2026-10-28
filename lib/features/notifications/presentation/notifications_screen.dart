@@ -80,6 +80,9 @@ class NotificationsScreen extends ConsumerWidget {
               } else if (notif.type == 'CLAIM_APPROVED') {
                 icon = Icons.check_circle_rounded;
                 iconColor = AppColors.secondary;
+              } else if (notif.type == 'CLAIM_REJECTED') {
+                icon = Icons.cancel_rounded;
+                iconColor = AppColors.error;
               }
 
               final isUnread = !notif.isRead;
@@ -88,7 +91,7 @@ class NotificationsScreen extends ConsumerWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (notif.type == 'POTENTIAL_MATCH' && notif.targetId.isNotEmpty) {
+                    if (foundItemNotificationTypes.contains(notif.type) && notif.targetId.isNotEmpty) {
                       openMatchedFoundItem(
                         context,
                         ref,

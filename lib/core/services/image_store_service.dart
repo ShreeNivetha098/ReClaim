@@ -50,6 +50,18 @@ class ImageStoreService {
     return '$refPrefix$id';
   }
 
+  /// Deletes a stored photo. Failures are only logged: a leftover photo is harmless.
+  static Future<void> delete(String? imageUrl) async {
+    if (!isStoredRef(imageUrl)) return;
+    _cache.remove(imageUrl);
+    if (!FirebaseService.isInitialized) return;
+    try {
+      await FirebaseService.firestore.collection(collection).doc(_docId(imageUrl!)).delete();
+    } catch (e) {
+      debugPrint('ImageStoreService.delete error: $e');
+    }
+  }
+
   /// Returns already-loaded bytes without a network call.
   static Uint8List? cached(String ref) => _cache[ref];
 

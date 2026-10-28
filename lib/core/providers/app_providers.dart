@@ -96,6 +96,21 @@ class LostItemsNotifier extends StateNotifier<AsyncValue<List<LostItemModel>>> {
     await _repo.deleteLostItem(itemId);
     await loadLostItems();
   }
+
+  Future<void> updateLostItem(LostItemModel item) async {
+    await _repo.updateLostItem(item);
+    await loadLostItems();
+  }
+
+  Future<void> markRecovered(String itemId) async {
+    await _repo.markLostItemRecovered(itemId);
+    await loadLostItems();
+  }
+
+  Future<void> deleteOwnLostItem(LostItemModel item) async {
+    await _repo.deleteOwnLostItem(item);
+    await loadLostItems();
+  }
 }
 
 final lostItemsProvider = StateNotifierProvider<LostItemsNotifier, AsyncValue<List<LostItemModel>>>((ref) {
@@ -128,6 +143,21 @@ class FoundItemsNotifier extends StateNotifier<AsyncValue<List<FoundItemModel>>>
 
   Future<void> deleteFoundItem(String itemId) async {
     await _repo.deleteFoundItem(itemId);
+    await loadFoundItems();
+  }
+
+  Future<void> updateFoundItem(FoundItemModel item) async {
+    await _repo.updateFoundItem(item);
+    await loadFoundItems();
+  }
+
+  Future<void> markReturned(String itemId) async {
+    await _repo.markFoundItemReturned(itemId);
+    await loadFoundItems();
+  }
+
+  Future<void> deleteOwnFoundItem(FoundItemModel item) async {
+    await _repo.deleteOwnFoundItem(item);
     await loadFoundItems();
   }
 }

@@ -22,6 +22,15 @@ class MockLostItemsNotifier extends StateNotifier<AsyncValue<List<LostItemModel>
 
   @override
   Future<void> deleteLostItem(String itemId) async {}
+
+  @override
+  Future<void> updateLostItem(LostItemModel item) async {}
+
+  @override
+  Future<void> markRecovered(String itemId) async {}
+
+  @override
+  Future<void> deleteOwnLostItem(LostItemModel item) async {}
 }
 
 class MockFoundItemsNotifier extends StateNotifier<AsyncValue<List<FoundItemModel>>>
@@ -36,6 +45,15 @@ class MockFoundItemsNotifier extends StateNotifier<AsyncValue<List<FoundItemMode
 
   @override
   Future<void> deleteFoundItem(String itemId) async {}
+
+  @override
+  Future<void> updateFoundItem(FoundItemModel item) async {}
+
+  @override
+  Future<void> markReturned(String itemId) async {}
+
+  @override
+  Future<void> deleteOwnFoundItem(FoundItemModel item) async {}
 }
 
 void main() {
