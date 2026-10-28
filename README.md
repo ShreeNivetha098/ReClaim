@@ -68,6 +68,21 @@ See [Roadmap](#roadmap) for details.
 -   **Navigation:** go_router
 -   **Backend:** Firebase Authentication and Cloud Firestore (Spark plan)
 
+## Design
+
+A soft, friendly look shared by the iOS app and the web admin:
+
+-   **Colours** (`lib/core/constants/app_colors.dart`): indigo-violet
+    brand gradient, coral for lost items, teal for found items, amber
+    for matches, on a warm lavender-white background.
+-   **Type:** Plus Jakarta Sans.
+-   **Shared widgets** (`lib/shared/widgets/`): gradient buttons and
+    soft-shadow cards that shrink slightly when pressed
+    (`animations.dart`), item cards, status pills, category icons
+    (`category_style.dart`) and form parts (`form_parts.dart`).
+-   **Motion:** lists fade and slide in, the match score animates, and
+    taps give light haptic feedback.
+
 ## Free-plan design
 
 Because the project must stay on the free Firebase Spark plan and must
@@ -204,6 +219,20 @@ score out of 100:
 Pairs that score at or above the threshold appear as potential matches.
 
 ## Testing
+
+### Screenshot tour
+`tool/screen_tour.py` fills the Firebase emulators with sample data,
+walks through every main screen of the iOS app on a simulator and saves
+a screenshot of each, which is useful for reviewing UI changes. It never
+touches the live project.
+
+``` bash
+open -a Simulator
+firebase emulators:exec --project reclaim-c4695 --only auth,firestore \
+  "python3 tool/screen_tour.py <simulator-id> /tmp/reclaim-tour"
+```
+
+### Unit and widget tests
 
 ``` bash
 flutter analyze

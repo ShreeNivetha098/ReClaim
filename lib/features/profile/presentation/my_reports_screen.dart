@@ -37,16 +37,30 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> with SingleTi
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Reported Items'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textMuted,
-          indicatorColor: AppColors.primary,
-          tabs: const [
-            Tab(text: 'My Lost Reports'),
-            Tab(text: 'My Found Reports'),
-          ],
+        title: const Text('My reports'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            height: 46,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.inputFill,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              labelColor: AppColors.textPrimary,
+              tabs: const [
+                Tab(text: 'Lost'),
+                Tab(text: 'Found'),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(

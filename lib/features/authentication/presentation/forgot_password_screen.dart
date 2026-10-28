@@ -62,12 +62,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ? Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.mark_email_read_rounded,
-                      size: 64,
-                      color: AppColors.secondary,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.5, end: 1),
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.elasticOut,
+                      builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: const BoxDecoration(gradient: AppColors.foundGradient, shape: BoxShape.circle),
+                        child: const Icon(Icons.mark_email_read_rounded, size: 48, color: Colors.white),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     const Text(
                       'Password Reset Sent',
                       style: TextStyle(
@@ -94,11 +100,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.brandGradient,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Icon(Icons.lock_reset_rounded, color: Colors.white, size: 28),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
                       const Text(
-                        'Forgot Your Password?',
+                        'Forgot your password?',
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -113,7 +131,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                       const SizedBox(height: 24),
                       CustomTextField(
                         label: 'Institutional Email',
-                        hint: 'student@reclaim.edu',
+                        hint: 'student@psgtech.ac.in',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: const Icon(Icons.email_outlined),

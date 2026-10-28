@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/widgets/custom_card.dart';
@@ -19,7 +20,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Potential Matches'),
+        title: const Text('Possible matches'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -31,23 +32,23 @@ class PotentialMatchesScreen extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                gradient: AppColors.lostGradient,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppStyles.softShadow,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
+                      const Icon(Icons.search_rounded, color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                       const Text(
-                        'Target Lost Item',
+                        'Your lost item',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -55,12 +56,12 @@ class PotentialMatchesScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     lostItem.itemName,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Category: ${lostItem.category} • Location: ${lostItem.locationLost}',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    '${lostItem.category} • ${lostItem.locationLost}',
+                    style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.9)),
                   ),
                 ],
               ),
@@ -85,7 +86,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${matches.length} Matches Found',
+                    matches.length == 1 ? '1 match' : '${matches.length} matches',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

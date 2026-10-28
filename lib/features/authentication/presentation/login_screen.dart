@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_strings.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/brand_logo.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -72,37 +72,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // App Icon & Header
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.find_in_page_rounded,
-                        size: 48,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  // App mark & greeting
+                  const Center(child: BrandLogo(size: 76)),
+                  const SizedBox(height: 28),
                   const Text(
-                    AppStrings.appName,
+                    'Welcome back',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   const Text(
-                    AppStrings.loginSubtitle,
+                    'Log in with your PSG Tech email to find\nand return lost items on campus.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
+                      height: 1.4,
                       color: AppColors.textSecondary,
                     ),
                   ),

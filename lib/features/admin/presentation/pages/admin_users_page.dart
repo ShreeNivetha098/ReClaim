@@ -51,7 +51,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                       children: [
                         Icon(Icons.people_outline, size: 56, color: AppColors.textMuted.withValues(alpha: 0.4)),
                         const SizedBox(height: 12),
-                        Text('No users found', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        Text('No users found', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                       ],
                     ),
                   );
@@ -79,7 +79,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search by name, email, or ID...',
-              hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+              hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textMuted),
               prefixIcon: const Icon(Icons.search, size: 20),
               filled: true,
               fillColor: Colors.white,
@@ -136,7 +136,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text('$label: $e', style: GoogleFonts.inter(fontSize: 13)))).toList(),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text('$label: $e', style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
           onChanged: onChanged,
         ),
       ),
@@ -175,12 +175,12 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 28,
-              headingTextStyle: GoogleFonts.inter(
+              headingTextStyle: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textPrimary),
               columns: const [
                 DataColumn(label: Text('NAME')),
                 DataColumn(label: Text('EMAIL')),
@@ -212,11 +212,11 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
               backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: Text(
                 user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13),
               ),
             ),
             const SizedBox(width: 10),
-            Text(user.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            Text(user.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
             if (isSelf) ...[
               const SizedBox(width: 8),
               Container(
@@ -227,7 +227,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                 ),
                 child: Text(
                   'You',
-                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
                 ),
               ),
             ],
@@ -301,7 +301,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
           Icon(Icons.verified_rounded, size: 16, color: color),
           const SizedBox(width: 4),
         ],
-        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+        Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
       ],
     );
   }
@@ -328,7 +328,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(role, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
+      child: Text(role, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
     );
   }
 
@@ -341,7 +341,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
       ),
       child: Text(
         isActive ? 'Active' : 'Inactive',
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: isActive ? AppColors.statusReturnedText : AppColors.statusClosedText,
@@ -370,7 +370,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
       builder: (ctx) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Update Role for ${user.name}', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+          title: Text('Update Role for ${user.name}', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 16)),
           content: StatefulBuilder(
             builder: (ctx, setDialogState) {
               return DropdownButton<String>(

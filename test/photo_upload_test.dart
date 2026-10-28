@@ -6,6 +6,7 @@ import 'package:reclaim/shared/models/lost_item_model.dart';
 import 'package:reclaim/shared/models/found_item_model.dart';
 import 'package:reclaim/core/services/image_store_service.dart';
 import 'package:reclaim/core/services/reclaim_repository.dart';
+import 'package:reclaim/shared/widgets/category_style.dart';
 import 'package:reclaim/shared/widgets/item_card.dart';
 
 void main() {
@@ -160,7 +161,9 @@ void main() {
       );
 
       expect(find.text('Lost Keys'), findsOneWidget);
-      expect(find.byIcon(Icons.search), findsOneWidget);
+      // Without a photo, the card shows the item's category icon.
+      expect(find.byWidgetPredicate((w) => w is Icon && w.icon == categoryIcon('Keys') && w.size == 48),
+          findsOneWidget);
     });
 
     testWidgets('ItemCard renders placeholder icon when imageUrl is empty string', (tester) async {
@@ -183,7 +186,8 @@ void main() {
       );
 
       expect(find.text('Found Watch'), findsOneWidget);
-      expect(find.byIcon(Icons.inventory_2_outlined), findsOneWidget);
+      expect(find.byWidgetPredicate((w) => w is Icon && w.icon == categoryIcon('Accessories') && w.size == 48),
+          findsOneWidget);
     });
   });
 }

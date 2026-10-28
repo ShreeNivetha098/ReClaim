@@ -69,7 +69,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
             const SizedBox(height: 12),
             Text(
               'Error loading unclaimed items: $errorMsg',
-              style: GoogleFonts.inter(color: AppColors.textSecondary),
+              style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -102,7 +102,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
           // Page Header
           Text(
             'Unclaimed Items',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -111,7 +111,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
           const SizedBox(height: 4),
           Text(
             'Items that have remained unresolved beyond the defined holding period.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: AppColors.textSecondary,
             ),
@@ -130,7 +130,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search unclaimed items...',
-                    hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+                    hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textMuted),
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
@@ -178,7 +178,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
-              labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
               tabs: [
                 Tab(text: '  Lost Items (${unclaimedLost.length})  '),
                 Tab(text: '  Found Items (${unclaimedFound.length})  '),
@@ -263,12 +263,12 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 24,
-              headingTextStyle: GoogleFonts.inter(
+              headingTextStyle: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('ITEM NAME')),
                 DataColumn(label: Text('CATEGORY')),
@@ -290,7 +290,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
                     DataCell(
                       Text(
                         item.itemName,
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
                       ),
                     ),
                     DataCell(Text(item.category)),
@@ -336,12 +336,12 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 24,
-              headingTextStyle: GoogleFonts.inter(
+              headingTextStyle: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('ITEM NAME')),
                 DataColumn(label: Text('CATEGORY')),
@@ -363,7 +363,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
                     DataCell(
                       Text(
                         item.itemName,
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
                       ),
                     ),
                     DataCell(Text(item.category)),
@@ -403,7 +403,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
       ),
       child: Text(
         status.toUpperCase(),
-        style: GoogleFonts.inter(
+        style: GoogleFonts.plusJakartaSans(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: AppColors.statusUnclaimedText,
@@ -424,7 +424,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
           icon: const Icon(Icons.visibility_outlined, size: 16),
           label: Text(
             'View Details',
-            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600),
           ),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
@@ -537,7 +537,7 @@ class _AdminUnclaimedPageState extends ConsumerState<AdminUnclaimedPage>
           const SizedBox(height: 12),
           Text(
             message,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: AppColors.textSecondary,
             ),

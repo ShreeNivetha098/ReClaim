@@ -65,7 +65,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
   Widget _buildFilterChip(String label) {
     final isSelected = _statusFilter == label;
     return FilterChip(
-      label: Text(label, style: GoogleFonts.inter(
+      label: Text(label, style: GoogleFonts.plusJakartaSans(
         fontSize: 13,
         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         color: isSelected ? Colors.white : AppColors.textSecondary,
@@ -94,8 +94,8 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 24,
-              headingTextStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13),
+              headingTextStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('CLAIM ID')),
                 DataColumn(label: Text('CLAIMANT')),
@@ -118,7 +118,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
     return DataRow(cells: [
       DataCell(Text(
         claim.id.length > 8 ? '${claim.id.substring(0, 8)}...' : claim.id,
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
       )),
       DataCell(_claimantCell(claim.claimantId)),
       DataCell(Text(claim.foundItemId.length > 12 ? '${claim.foundItemId.substring(0, 12)}...' : claim.foundItemId)),
@@ -147,7 +147,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
                 const SizedBox(width: 6),
                 _actionButton('Reject', AppColors.error, Icons.close, () => _updateClaim(claim, 'REJECTED')),
               ])
-            : Text(claim.status, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+            : Text(claim.status, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textMuted)),
       ),
     ]);
   }
@@ -167,7 +167,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(claimant.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          Text(claimant.name, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
           const SizedBox(width: 4),
           Icon(
             claimant.isVerified ? Icons.verified_rounded : Icons.help_outline_rounded,
@@ -228,7 +228,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(status, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
+      child: Text(status, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
     );
   }
 
@@ -241,7 +241,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
           const SizedBox(height: 12),
           Text(
             _statusFilter == 'All' ? 'No claims found' : 'No $_statusFilter claims',
-            style: GoogleFonts.inter(color: AppColors.textSecondary),
+            style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary),
           ),
         ],
       ),
