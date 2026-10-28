@@ -139,6 +139,9 @@ firebase deploy --only hosting --project <your-project-id>
 
 The live admin dashboard is at <https://reclaim-c4695.web.app>.
 
+**Use Chrome for the admin site.** Known issue: in Safari, signing in
+with a valid admin account shows "Access denied". Not yet fixed.
+
 Always pass `--dart-define-from-file=firebase_web.json`. Without it the
 site cannot reach Firebase, and the admin login says so.
 
