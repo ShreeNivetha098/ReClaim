@@ -83,6 +83,12 @@ class NotificationsScreen extends ConsumerWidget {
               } else if (notif.type == 'CLAIM_REJECTED') {
                 icon = Icons.cancel_rounded;
                 iconColor = AppColors.error;
+              } else if (notif.type == 'VERIFICATION_APPROVED') {
+                icon = Icons.verified_rounded;
+                iconColor = AppColors.success;
+              } else if (notif.type == 'VERIFICATION_REJECTED') {
+                icon = Icons.error_outline_rounded;
+                iconColor = AppColors.error;
               }
 
               final isUnread = !notif.isRead;

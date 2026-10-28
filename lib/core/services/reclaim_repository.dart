@@ -12,6 +12,7 @@ import '../../shared/models/chat_room_model.dart';
 import '../../shared/models/notification_model.dart';
 import '../../shared/models/match_result_model.dart';
 import 'firebase_service.dart';
+import 'id_photo_service.dart';
 import 'image_store_service.dart';
 import 'matching_service.dart';
 import '../constants/app_constants.dart';
@@ -190,6 +191,9 @@ class ReClaimRepository {
     }
   }
 
+  /// Fields only the verification flow may change, never a profile edit.
+  static const _verificationFields = {'verificationStatus', 'verifiedBy', 'verifiedAt', 'verificationNote'};
+
   Future<void> updateUserProfile(UserModel updatedUser) async {
     currentUser = updatedUser;
     if (FirebaseService.isInitialized) {
@@ -197,7 +201,7 @@ class ReClaimRepository {
         await FirebaseService.firestore
             .collection('users')
             .doc(updatedUser.uid)
-            .update(updatedUser.toMap());
+            .update(updatedUser.toMap()..removeWhere((key, _) => _verificationFields.contains(key)));
         _syncActiveUser(updatedUser);
       } catch (e) {
         debugPrint('Update profile error: $e');
@@ -208,6 +212,101 @@ class ReClaimRepository {
         _mockUsers[index] = updatedUser;
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // COLLEGE ID VERIFICATION
+  // ---------------------------------------------------------------------------
+
+  /// Uploads the signed-in user's college ID photo and asks an admin to review it.
+  Future<UserModel> submitIdPhoto(Uint8List bytes) async {
+    final user = _requireCurrentUser();
+    await IdPhotoService.save(user.uid, bytes);
+    final updated = user.withVerification(status: AppConstants.verificationPending);
+    await _writeOwnVerification(updated);
+    return updated;
+  }
+
+  /// Withdraws a photo that is still waiting for review.
+  Future<UserModel> withdrawIdPhoto() async {
+    final user = _requireCurrentUser();
+    await IdPhotoService.delete(user.uid);
+    final updated = user.withVerification(status: AppConstants.verificationNone);
+    await _writeOwnVerification(updated);
+    return updated;
+  }
+
+  UserModel _requireCurrentUser() {
+    final user = currentUser;
+    if (user == null) throw StateError('Please log in again.');
+    return user;
+  }
+
+  Future<void> _writeOwnVerification(UserModel updated) async {
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore.collection('users').doc(updated.uid).update({
+        'verificationStatus': updated.verificationStatus,
+        'verificationNote': null,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    }
+    _replaceMockUser(updated);
+    currentUser = updated;
+  }
+
+  void _replaceMockUser(UserModel user) {
+    final index = _mockUsers.indexWhere((u) => u.uid == user.uid);
+    if (index != -1) _mockUsers[index] = user;
+  }
+
+  /// Admin decision on a user's college ID. The user's status and the photo's
+  /// deletion are written in one batch, so the photo never outlives the review.
+  Future<void> reviewIdVerification({
+    required UserModel user,
+    required bool approve,
+    required String adminName,
+    String? note,
+  }) async {
+    final now = DateTime.now();
+    final updated = approve
+        ? user.withVerification(
+            status: AppConstants.verificationVerified,
+            verifiedBy: adminName,
+            verifiedAt: now,
+          )
+        : user.withVerification(status: AppConstants.verificationRejected, note: note);
+
+    if (FirebaseService.isInitialized) {
+      final firestore = FirebaseService.firestore;
+      final batch = firestore.batch();
+      batch.update(firestore.collection('users').doc(user.uid), {
+        'verificationStatus': updated.verificationStatus,
+        'verifiedBy': updated.verifiedBy,
+        'verifiedAt': approve ? Timestamp.fromDate(now) : null,
+        'verificationNote': updated.verificationNote,
+        'updatedAt': Timestamp.fromDate(now),
+      });
+      batch.delete(firestore.collection(IdPhotoService.collection).doc(user.uid));
+      await batch.commit();
+    } else {
+      await IdPhotoService.delete(user.uid);
+    }
+    _replaceMockUser(updated);
+
+    await createNotification(
+      NotificationModel(
+        id: _uuid.v4(),
+        userId: user.uid,
+        title: approve ? 'Your account is verified' : 'ID verification not approved',
+        body: approve
+            ? 'An admin checked your college ID. Your photo has been deleted.'
+            : '${note == null || note.trim().isEmpty ? 'Your photo could not be verified.' : note.trim()} '
+                'Your photo has been deleted; you can upload a clearer one from your profile.',
+        type: approve ? 'VERIFICATION_APPROVED' : 'VERIFICATION_REJECTED',
+        targetId: user.uid,
+        createdAt: now,
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------

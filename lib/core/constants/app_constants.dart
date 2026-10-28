@@ -13,4 +13,10 @@ abstract class AppConstants {
   static const String statusUnclaimed = 'UNCLAIMED';
   static const String statusReturned = 'RETURNED';
   static const String statusClosed = 'CLOSED';
+
+  /// College ID verification states for a user account.
+  static const String verificationNone = 'NONE';
+  static const String verificationPending = 'PENDING';
+  static const String verificationVerified = 'VERIFIED';
+  static const String verificationRejected = 'REJECTED';
 }

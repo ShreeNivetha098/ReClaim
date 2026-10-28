@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/reclaim_repository.dart';
 import '../services/matching_service.dart';
@@ -61,6 +62,20 @@ class CurrentUserNotifier extends StateNotifier<UserModel?> {
   Future<void> updateProfile(UserModel updatedUser) async {
     await _repo.updateUserProfile(updatedUser);
     state = updatedUser;
+  }
+
+  Future<void> submitIdPhoto(Uint8List bytes) async {
+    state = await _repo.submitIdPhoto(bytes);
+  }
+
+  Future<void> withdrawIdPhoto() async {
+    state = await _repo.withdrawIdPhoto();
+  }
+
+  /// Reloads the profile, e.g. to pick up an admin's verification decision.
+  Future<void> refresh() async {
+    final user = await _repo.checkCurrentUser();
+    if (user != null) state = user;
   }
 }
 

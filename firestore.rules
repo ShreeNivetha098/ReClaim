@@ -21,17 +21,51 @@ service cloud.firestore {
     // SECURITY: Users cannot self-assign 'Admin' role during registration or update.
     // Admin accounts must be created by an existing Admin or via Firebase Console.
     // Reading user profiles is restricted to the user themselves or Admins to protect personal data.
+    // College ID verification: only an admin can mark a user VERIFIED or REJECTED.
+    function verificationUnchanged() {
+      return request.resource.data.get('verificationStatus', 'NONE') == resource.data.get('verificationStatus', 'NONE')
+          && request.resource.data.get('verifiedBy', null) == resource.data.get('verifiedBy', null)
+          && request.resource.data.get('verifiedAt', null) == resource.data.get('verifiedAt', null)
+          && request.resource.data.get('verificationNote', null) == resource.data.get('verificationNote', null);
+    }
+
+    // A user may submit a photo for review (NONE/REJECTED -> PENDING)
+    // or withdraw a pending one (PENDING -> NONE), and change nothing else.
+    function isOwnVerificationRequest() {
+      let before = resource.data.get('verificationStatus', 'NONE');
+      let after = request.resource.data.get('verificationStatus', 'NONE');
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['verificationStatus', 'verificationNote', 'updatedAt'])
+          && request.resource.data.get('verificationNote', null) == null
+          && ((before in ['NONE', 'REJECTED'] && after == 'PENDING')
+              || (before == 'PENDING' && after == 'NONE'));
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAuthenticated()
                     && request.auth.uid == userId
-                    && request.resource.data.role != 'Admin';
+                    && request.resource.data.role != 'Admin'
+                    && request.resource.data.get('verificationStatus', 'NONE') in ['NONE', 'PENDING']
+                    && request.resource.data.get('verifiedBy', null) == null
+                    && request.resource.data.get('verifiedAt', null) == null;
       allow update: if isAdmin() || (
         isOwner(userId)
         && request.resource.data.role == resource.data.role
         && (!('isActive' in resource.data) || request.resource.data.isActive == resource.data.isActive)
+        && (verificationUnchanged() || isOwnVerificationRequest())
       );
       allow delete: if isAdmin();
+    }
+
+    // College ID photos: private to the user and admins, deleted after review.
+    match /idPhotos/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId)
+                            && request.resource.data.uploaderId == userId
+                            && request.resource.data.data is bytes
+                            && request.resource.data.data.size() <= 900 * 1024;
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // Active Users Registry (for Common Notification routing without exposing private profiles)

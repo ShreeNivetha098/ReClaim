@@ -36,6 +36,12 @@ const _navItems = [
     route: AppRoutes.adminUsers,
   ),
   _NavItem(
+    label: 'Verification',
+    icon: Icons.badge_outlined,
+    activeIcon: Icons.badge_rounded,
+    route: AppRoutes.adminVerification,
+  ),
+  _NavItem(
     label: 'Reports',
     icon: Icons.assignment_outlined,
     activeIcon: Icons.assignment_rounded,
@@ -82,20 +88,23 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
     if (location.startsWith(AppRoutes.adminUsers)) {
       return 1;
     }
+    if (location.startsWith(AppRoutes.adminVerification)) {
+      return 2;
+    }
     if (location.startsWith(AppRoutes.adminLostReports) ||
         location.startsWith(AppRoutes.adminFoundReports) ||
         location.startsWith(AppRoutes.adminUnclaimed) ||
         location.contains('reports')) {
-      return 2;
-    }
-    if (location.startsWith(AppRoutes.adminClaims) || location.startsWith(AppRoutes.adminClaimed)) {
       return 3;
     }
-    if (location.startsWith(AppRoutes.adminActivity)) {
+    if (location.startsWith(AppRoutes.adminClaims) || location.startsWith(AppRoutes.adminClaimed)) {
       return 4;
     }
-    if (location.startsWith(AppRoutes.adminAnalytics)) {
+    if (location.startsWith(AppRoutes.adminActivity)) {
       return 5;
+    }
+    if (location.startsWith(AppRoutes.adminAnalytics)) {
+      return 6;
     }
     return 0;
   }
@@ -393,6 +402,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
   String _getPageTitle(String location) {
     if (location.contains('overview')) return 'Dashboard Overview';
     if (location.contains('users')) return 'User Management';
+    if (location.contains('verification')) return 'College ID Verification';
     if (location.contains('reports')) return 'Report Management';
     if (location.contains('unclaimed')) return 'Unclaimed Items';
     if (location.contains('claim')) return 'Claims & History';

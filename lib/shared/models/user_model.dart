@@ -13,6 +13,14 @@ class UserModel {
   final DateTime updatedAt;
   final bool isActive;
 
+  /// College ID verification: NONE, PENDING, VERIFIED or REJECTED.
+  final String verificationStatus;
+  final String? verifiedBy; // admin's name
+  final DateTime? verifiedAt;
+  final String? verificationNote; // reason, when rejected
+
+  bool get isVerified => verificationStatus == 'VERIFIED';
+
   UserModel({
     required this.uid,
     required this.name,
@@ -25,6 +33,10 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
+    this.verificationStatus = 'NONE',
+    this.verifiedBy,
+    this.verifiedAt,
+    this.verificationNote,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -44,6 +56,10 @@ class UserModel {
           ? (map['updatedAt'] as Timestamp).toDate()
           : DateTime.tryParse(map['updatedAt']?.toString() ?? '') ?? DateTime.now(),
       isActive: map['isActive'] ?? true,
+      verificationStatus: map['verificationStatus']?.toString() ?? 'NONE',
+      verifiedBy: map['verifiedBy'],
+      verifiedAt: map['verifiedAt'] is Timestamp ? (map['verifiedAt'] as Timestamp).toDate() : null,
+      verificationNote: map['verificationNote'],
     );
   }
 
@@ -60,7 +76,27 @@ class UserModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isActive': isActive,
+      'verificationStatus': verificationStatus,
+      'verifiedBy': verifiedBy,
+      'verifiedAt': verifiedAt == null ? null : Timestamp.fromDate(verifiedAt!),
+      'verificationNote': verificationNote,
     };
+  }
+
+  /// Sets all verification fields at once, so earlier values can be cleared.
+  UserModel withVerification({
+    required String status,
+    String? verifiedBy,
+    DateTime? verifiedAt,
+    String? note,
+  }) {
+    return UserModel.fromMap({
+      ...toMap(),
+      'verificationStatus': status,
+      'verifiedBy': verifiedBy,
+      'verifiedAt': verifiedAt == null ? null : Timestamp.fromDate(verifiedAt),
+      'verificationNote': note,
+    }, uid);
   }
 
   UserModel copyWith({
@@ -75,6 +111,10 @@ class UserModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    String? verificationStatus,
+    String? verifiedBy,
+    DateTime? verifiedAt,
+    String? verificationNote,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -88,6 +128,10 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      verificationStatus: verificationStatus ?? this.verificationStatus,
+      verifiedBy: verifiedBy ?? this.verifiedBy,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
+      verificationNote: verificationNote ?? this.verificationNote,
     );
   }
 }

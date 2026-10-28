@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../verification/presentation/id_photo_picker.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -29,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  Uint8List? _idPhoto;
 
   final List<String> _departments = [
     'Computer Science & Applications',
@@ -87,10 +90,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             role: _selectedRole,
           );
 
+      // The account exists now; a failed photo upload can be retried from Profile.
+      String message = 'Registration successful! Welcome to ReClaim.';
+      if (_idPhoto != null) {
+        try {
+          await ref.read(currentUserProvider.notifier).submitIdPhoto(_idPhoto!);
+          message = 'Welcome to ReClaim! Your college ID has been sent for verification.';
+        } catch (e) {
+          message = 'Welcome to ReClaim! Your ID photo could not be sent; '
+              'you can upload it again from your Profile.';
+        }
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful! Welcome to ReClaim.'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: AppColors.success,
           ),
         );
@@ -110,6 +125,58 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Widget _buildIdPhotoSection() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.badge_outlined, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('Get verified (optional)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(idPhotoPrivacyNote, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(height: 10),
+          if (_idPhoto != null)
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(_idPhoto!, width: 72, height: 48, fit: BoxFit.cover),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(child: Text('College ID photo added')),
+                TextButton(
+                  onPressed: _isLoading ? null : () => setState(() => _idPhoto = null),
+                  child: const Text('Remove'),
+                ),
+              ],
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      final bytes = await pickIdPhoto(context);
+                      if (bytes != null && mounted) setState(() => _idPhoto = bytes);
+                    },
+              icon: const Icon(Icons.add_a_photo_outlined),
+              label: const Text('Add college ID photo'),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -374,6 +441,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 24),
+
+                // Optional college ID photo for account verification
+                _buildIdPhotoSection(),
                 const SizedBox(height: 24),
 
                 // Submit Register

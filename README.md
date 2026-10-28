@@ -43,6 +43,13 @@ Firebase plan or a paid Apple Developer account.
     (lost) or returned (found), or delete it with its photo.
 -   **Claim decisions** are sent to the claimant as a notification and
     iOS banner, saying where to collect the item if approved.
+-   **College ID verification**: at sign-up or later from Profile, a
+    user can upload a photo of their college ID card. An admin compares
+    it with the user's name and roll number on the web dashboard and
+    verifies or rejects it; either way the photo is deleted in the same
+    step, so no ID images are kept. Verified users get a badge, and the
+    admin Claims table shows whether a claimant is verified. Government
+    IDs (Aadhaar, PAN) are deliberately not collected.
 -   **Web admin dashboard**: users, lost and found reports, claims, items
     unclaimed after 30 days, activity log and statistics.
 -   **Item photos** saved in Firestore: photos are shrunk to at most
@@ -203,7 +210,7 @@ flutter analyze
 flutter test
 ```
 
-Latest run: **47 tests passing** and **no analyzer issues**.
+Latest run: **55 tests passing** and **no analyzer issues**.
 
 ### Security-rule tests
 `firestore-tests/` checks `firestore.rules` against the local Firestore
@@ -214,7 +221,7 @@ npm --prefix firestore-tests install
 firebase emulators:exec --project demo-reclaim --only firestore "npm --prefix firestore-tests test"
 ```
 
-Latest run: **31 rule tests passing**.
+Latest run: **40 rule tests passing**.
 
 ## Roadmap
 
@@ -245,6 +252,9 @@ Planned work, all within the free Firebase plan:
 -   Users cannot give themselves the Admin role, edit others' reports,
     send others arbitrary notifications, or read chats they are not
     part of. Chat messages live under `chats/{chatId}/messages`.
+-   College ID photos live in `idPhotos/{uid}`, readable only by that
+    user and admins. Users cannot mark themselves verified; only an
+    admin can, and verifying or rejecting deletes the photo.
 
 ## License
 
