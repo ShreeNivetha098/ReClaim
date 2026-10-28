@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_styles.dart';
+import 'animations.dart';
 
+/// Rounded white card with a soft shadow. Tappable cards shrink when pressed.
 class CustomCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -20,28 +22,19 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.cardBackground,
-        borderRadius: AppStyles.borderRadiusMd,
-        border: border ??
-            Border.all(
-              color: AppColors.divider.withValues(alpha: 0.8),
-              width: 1,
-            ),
+        borderRadius: AppStyles.borderRadiusLg,
+        border: border,
+        boxShadow: AppStyles.softShadow,
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: AppStyles.borderRadiusMd,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppStyles.borderRadiusMd,
-          child: Padding(
-            padding: padding ?? AppStyles.paddingCard,
-            child: child,
-          ),
-        ),
+      child: Padding(
+        padding: padding ?? AppStyles.paddingCard,
+        child: child,
       ),
     );
+    return onTap == null ? card : PressableScale(onTap: onTap, child: card);
   }
 }

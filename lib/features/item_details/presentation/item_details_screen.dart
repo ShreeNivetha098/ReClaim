@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/models/found_item_model.dart';
+import '../../../shared/widgets/animations.dart';
+import '../../../shared/widgets/category_style.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/item_image.dart';
 import '../../../shared/widgets/status_chip.dart';
@@ -51,14 +54,37 @@ class ItemDetailsScreen extends ConsumerWidget {
         ? reporterEmail
         : null;
 
-    return Scaffold(
+    final typeColor = isLost ? AppColors.lost : AppColors.found;
+
+    return StatusBarScrim(
+      color: AppColors.background.withValues(alpha: 0.95),
+      child: Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(isLost ? 'Lost Item Details' : 'Found Item Details'),
+        backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: _GlassButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              onTap: () => Navigator.maybePop(context),
+            ),
+          ),
+        ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
             child: Center(
-              child: StatusChip(status: status),
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: AppStyles.softShadow,
+                ),
+                child: StatusChip(status: status),
+              ),
             ),
           ),
         ],
@@ -69,11 +95,15 @@ class ItemDetailsScreen extends ConsumerWidget {
           children: [
             // Image Header
             Container(
-              height: 250,
+              height: 340,
               width: double.infinity,
-              color: isLost
-                  ? AppColors.primary.withValues(alpha: 0.08)
-                  : AppColors.secondary.withValues(alpha: 0.08),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [typeColor.withValues(alpha: 0.12), typeColor.withValues(alpha: 0.28)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: imageUrl != null && imageUrl.isNotEmpty
                   ? ItemImage(
                       imageUrl: imageUrl,
@@ -91,26 +121,24 @@ class ItemDetailsScreen extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            isLost ? Icons.search : Icons.inventory_2_outlined,
-                            size: 64,
-                            color: isLost ? AppColors.primary : AppColors.secondary,
-                          ),
-                          const SizedBox(height: 8),
+                          Icon(categoryIcon(category), size: 88, color: typeColor.withValues(alpha: 0.8)),
+                          const SizedBox(height: 10),
                           Text(
-                            'No Image Provided',
-                            style: TextStyle(
-                              color: isLost ? AppColors.primary : AppColors.secondary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            'No photo added',
+                            style: TextStyle(color: typeColor, fontWeight: FontWeight.w700),
                           ),
                         ],
                       ),
                     ),
             ),
 
-            Padding(
-              padding: const EdgeInsets.all(20.0),
+            Container(
+              transform: Matrix4.translationValues(0, -28, 0),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppStyles.radiusXl)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -120,7 +148,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isLost ? AppColors.primary : AppColors.secondary,
+                          gradient: isLost ? AppColors.lostGradient : AppColors.foundGradient,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -369,7 +397,7 @@ class ItemDetailsScreen extends ConsumerWidget {
 
                   // Reporter Information
                   const Text(
-                    'Reporter Verification Info',
+                    'Reported by',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -401,9 +429,7 @@ class ItemDetailsScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                displayEmail != null
-                                    ? '$displayEmail • Verified Institutional User'
-                                    : 'Verified Institutional User',
+                                displayEmail != null ? '$displayEmail • PSG Tech account' : 'PSG Tech account',
                                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
@@ -443,7 +469,7 @@ class ItemDetailsScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildOwnerActions(
@@ -470,11 +496,14 @@ class ItemDetailsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
         ],
-        CustomButton(
-          text: 'Delete Report',
-          icon: Icons.delete_outline_rounded,
-          type: CustomButtonType.text,
+        TextButton.icon(
           onPressed: () => _deleteReport(context, ref, isLost: isLost),
+          icon: const Icon(Icons.delete_outline_rounded),
+          label: const Text('Delete Report'),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.error,
+            minimumSize: const Size.fromHeight(50),
+          ),
         ),
       ],
     );
@@ -609,6 +638,31 @@ class ItemDetailsScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Round translucent button that stays readable over a photo.
+class _GlassButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GlassButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+          boxShadow: AppStyles.softShadow,
+        ),
+        child: Icon(icon, size: 18, color: AppColors.textPrimary),
       ),
     );
   }

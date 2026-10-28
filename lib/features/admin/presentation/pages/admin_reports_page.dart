@@ -100,7 +100,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
-              labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
               tabs: const [
                 Tab(text: '  Lost Items  '),
                 Tab(text: '  Found Items  '),
@@ -134,7 +134,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
           child: TextField(
             decoration: InputDecoration(
               hintText: 'Search items by name, category, location...',
-              hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+              hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textMuted),
               prefixIcon: const Icon(Icons.search, size: 20),
               filled: true,
               fillColor: Colors.white,
@@ -191,7 +191,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text('$label: $e', style: GoogleFonts.inter(fontSize: 13)))).toList(),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text('$label: $e', style: GoogleFonts.plusJakartaSans(fontSize: 13)))).toList(),
           onChanged: onChanged,
         ),
       ),
@@ -273,8 +273,8 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 24,
-              headingTextStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13),
+              headingTextStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('ITEM NAME')),
                 DataColumn(label: Text('CATEGORY')),
@@ -286,7 +286,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
               ],
               rows: items.map((item) {
                 return DataRow(cells: [
-                  DataCell(Text(item.itemName, style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+                  DataCell(Text(item.itemName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600))),
                   DataCell(Text(item.category)),
                   DataCell(Text(item.reporterName ?? 'Unknown')),
                   DataCell(Text(item.locationLost, overflow: TextOverflow.ellipsis)),
@@ -317,8 +317,8 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(AppColors.background),
               columnSpacing: 24,
-              headingTextStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-              dataTextStyle: GoogleFonts.inter(fontSize: 13),
+              headingTextStyle: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+              dataTextStyle: GoogleFonts.plusJakartaSans(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('ITEM NAME')),
                 DataColumn(label: Text('CATEGORY')),
@@ -330,7 +330,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
               ],
               rows: items.map((item) {
                 return DataRow(cells: [
-                  DataCell(Text(item.itemName, style: GoogleFonts.inter(fontWeight: FontWeight.w600))),
+                  DataCell(Text(item.itemName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600))),
                   DataCell(Text(item.category)),
                   DataCell(Text(item.reporterName ?? 'Unknown')),
                   DataCell(Text(item.locationFound, overflow: TextOverflow.ellipsis)),
@@ -359,7 +359,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(status, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
+      child: Text(status, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: fg)),
     );
   }
 
@@ -453,7 +453,7 @@ class _AdminReportsPageState extends ConsumerState<AdminReportsPage> with Single
         children: [
           Icon(Icons.inbox_outlined, size: 56, color: AppColors.textMuted.withValues(alpha: 0.4)),
           const SizedBox(height: 12),
-          Text(message, style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          Text(message, style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
         ],
       ),
     );

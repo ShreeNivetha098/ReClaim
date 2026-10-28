@@ -66,7 +66,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                     ),
                     child: Text(
                       isLost ? 'LOST REPORT' : 'FOUND REPORT',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -77,7 +77,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       'Report Details',
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                   IconButton(
@@ -132,7 +132,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                       ),
                       child: Text(
                         description.isEmpty ? 'No description provided.' : description,
-                        style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textPrimary, height: 1.5),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -158,9 +158,9 @@ class AdminItemDetailsDialog extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(displayName, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(displayName, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14)),
                                 const SizedBox(height: 4),
-                                Text(displayEmail, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                                Text(displayEmail, style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary)),
                               ],
                             ),
                           ),
@@ -186,7 +186,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Text('Admin Actions:', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                  Text('Admin Actions:', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                   const Spacer(),
                   Wrap(
                     spacing: 8,
@@ -269,7 +269,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
         children: [
           Icon(isLost ? Icons.search : Icons.inventory_2_outlined, size: 48, color: AppColors.textMuted),
           const SizedBox(height: 8),
-          Text('No Image Available', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+          Text('No Image Available', style: GoogleFonts.plusJakartaSans(color: AppColors.textMuted, fontSize: 12)),
         ],
       ),
     );
@@ -281,7 +281,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         const SizedBox(height: 8),
         _statusChip(status),
         const SizedBox(height: 16),
@@ -308,7 +308,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: isSmall ? 12 : 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textSecondary,
@@ -318,7 +318,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: isSmall ? 12 : 13,
                 color: isSmall ? AppColors.textMuted : AppColors.textPrimary,
               ),
@@ -342,14 +342,14 @@ class AdminItemDetailsDialog extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(status, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: fg)),
+      child: Text(status, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: fg)),
     );
   }
 
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+      style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
     );
   }
 
@@ -370,7 +370,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.divider),
             ),
-            child: Text('No claim submitted.', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14)),
+            child: Text('No claim submitted.', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary, fontSize: 14)),
           );
         }
 
@@ -397,7 +397,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Text('Claim ID: ${claim.id.substring(0, 8)}...', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted)),
+              Text('Claim ID: ${claim.id.substring(0, 8)}...', style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textMuted)),
               const Spacer(),
               _statusChip(claim.status),
             ],
@@ -427,7 +427,7 @@ class AdminItemDetailsDialog extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       onPressed: () => onAction(action),
-      child: Text(text, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13)),
+      child: Text(text, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 13)),
     );
   }
 }

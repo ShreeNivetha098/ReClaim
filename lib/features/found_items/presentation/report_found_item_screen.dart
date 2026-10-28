@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/services/image_store_service.dart';
 import '../../../shared/models/found_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/form_parts.dart';
 import '../../../shared/widgets/item_image.dart';
 
 class ReportFoundItemScreen extends ConsumerStatefulWidget {
@@ -263,70 +263,24 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Image Picker (Optional)
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 170,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _hasPhoto ? AppColors.secondary : AppColors.divider,
-                        width: 1,
-                      ),
-                    ),
-                    child: _hasPhoto
-                        ? Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: _photoPreview(),
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imageBytes = null;
-                                      _existingImageUrl = null;
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.close, color: Colors.white, size: 18),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.camera_alt_outlined, size: 44, color: AppColors.secondary),
-                              SizedBox(height: 8),
-                              Text(
-                                'Photo (Optional)',
-                                style: TextStyle(
-                                  color: AppColors.secondary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Add a photo if available to help identify the item',
-                                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                  ),
+                FormIntro(
+                  gradient: AppColors.foundGradient,
+                  icon: Icons.volunteer_activism_rounded,
+                  title: _isEditing ? 'Update your report' : 'Thanks for helping out!',
+                  subtitle: 'A few details help the owner recognise their item.',
+                ),
+                const SizedBox(height: 20),
+
+                PhotoPickerBox(
+                  preview: _hasPhoto ? _photoPreview() : null,
+                  onPick: _pickImage,
+                  onRemove: () => setState(() {
+                    _imageBytes = null;
+                    _existingImageUrl = null;
+                  }),
+                  title: 'Add a photo',
+                  subtitle: 'A clear photo helps the owner find it',
+                  color: AppColors.found,
                 ),
                 const SizedBox(height: 20),
 
@@ -339,30 +293,12 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Dropdown
-                const Text(
-                  'Category *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.category_outlined),
-                  ),
-                  items: _categories
-                      .map((cat) => DropdownMenuItem(
-                            value: cat,
-                            child: Text(cat),
-                          ))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedCategory = val);
-                  },
+                // Category
+                const FieldLabel('Category *'),
+                CategoryPicker(
+                  selected: _selectedCategory,
+                  color: AppColors.found,
+                  onChanged: (val) => setState(() => _selectedCategory = val),
                 ),
                 const SizedBox(height: 16),
 
@@ -398,38 +334,9 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Date Found Selector
-                const Text(
-                  'Date Found *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                InkWell(
-                  onTap: () => _selectDate(context),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          DateFormat('MMM dd, yyyy').format(_dateFound),
-                          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
-                        ),
-                        const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.secondary),
-                      ],
-                    ),
-                  ),
-                ),
+                // Date
+                const FieldLabel('Date found *'),
+                DateField(date: _dateFound, onTap: () => _selectDate(context)),
                 const SizedBox(height: 16),
 
                 // Location Found

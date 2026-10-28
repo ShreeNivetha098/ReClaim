@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/brand_logo.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 import '../../verification/presentation/id_photo_picker.dart';
 
@@ -129,18 +131,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Widget _buildIdPhotoSection() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        color: Colors.white,
+        borderRadius: AppStyles.borderRadiusLg,
+        boxShadow: AppStyles.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.badge_outlined, color: AppColors.primary),
+              Icon(Icons.verified_user_rounded, color: AppColors.primary),
               SizedBox(width: 8),
               Text('Get verified (optional)', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
@@ -183,7 +185,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Account'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -193,12 +194,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Align(alignment: Alignment.centerLeft, child: BrandLogo(size: 56)),
+                const SizedBox(height: 18),
                 const Text(
                   AppStrings.registerTitle,
                   style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 4),

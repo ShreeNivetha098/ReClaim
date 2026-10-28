@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_styles.dart';
+import 'animations.dart';
 
 enum CustomButtonType { primary, secondary, outlined, text }
 
@@ -21,103 +22,89 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.width,
-    this.height = 50.0,
+    this.height = 54.0,
   });
+
+  bool get _isFilled => type == CustomButtonType.primary || type == CustomButtonType.secondary;
 
   @override
   Widget build(BuildContext context) {
     final isEnabled = onPressed != null && !isLoading;
+    final foreground = _isFilled ? Colors.white : AppColors.primary;
 
-    Widget child;
-    if (isLoading) {
-      child = SizedBox(
-        height: 22,
-        width: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            type == CustomButtonType.outlined || type == CustomButtonType.text
-                ? AppColors.primary
-                : Colors.white,
-          ),
+    final Widget label = isLoading
+        ? SizedBox(
+            height: 22,
+            width: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(foreground),
+            ),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 20, color: foreground),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ),
+            ],
+          );
+
+    final BoxDecoration decoration = switch (type) {
+      CustomButtonType.primary => BoxDecoration(
+          gradient: AppColors.brandGradient,
+          borderRadius: AppStyles.borderRadiusMd,
+          boxShadow: isEnabled ? AppStyles.floatingShadow : null,
         ),
-      );
-    } else if (icon != null) {
-      child = Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-          Text(text),
-        ],
-      );
-    } else {
-      child = Text(text);
-    }
+      CustomButtonType.secondary => BoxDecoration(
+          gradient: AppColors.foundGradient,
+          borderRadius: AppStyles.borderRadiusMd,
+          boxShadow: isEnabled
+              ? [
+                  BoxShadow(
+                    color: AppColors.secondary.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
+        ),
+      CustomButtonType.outlined => BoxDecoration(
+          color: Colors.white,
+          borderRadius: AppStyles.borderRadiusMd,
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+        ),
+      CustomButtonType.text => BoxDecoration(borderRadius: AppStyles.borderRadiusMd),
+    };
 
-    Widget buttonWidget;
-
-    switch (type) {
-      case CustomButtonType.primary:
-        buttonWidget = ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-            minimumSize: Size(width ?? double.infinity, height),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppStyles.borderRadiusMd,
-            ),
-          ),
-          child: child,
-        );
-        break;
-      case CustomButtonType.secondary:
-        buttonWidget = ElevatedButton(
-          onPressed: isEnabled ? onPressed : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.secondary.withValues(alpha: 0.5),
-            minimumSize: Size(width ?? double.infinity, height),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppStyles.borderRadiusMd,
-            ),
-          ),
-          child: child,
-        );
-        break;
-      case CustomButtonType.outlined:
-        buttonWidget = OutlinedButton(
-          onPressed: isEnabled ? onPressed : null,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.primary, width: 1.5),
-            minimumSize: Size(width ?? double.infinity, height),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppStyles.borderRadiusMd,
-            ),
-          ),
-          child: child,
-        );
-        break;
-      case CustomButtonType.text:
-        buttonWidget = TextButton(
-          onPressed: isEnabled ? onPressed : null,
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            minimumSize: Size(width ?? double.infinity, height),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppStyles.borderRadiusMd,
-            ),
-          ),
-          child: child,
-        );
-        break;
-    }
-
-    return buttonWidget;
+    return PressableScale(
+      onTap: isEnabled ? onPressed : null,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: isEnabled || isLoading ? 1 : 0.5,
+        child: Container(
+          width: width ?? double.infinity,
+          height: height,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: decoration,
+          child: label,
+        ),
+      ),
+    );
   }
 }

@@ -1,60 +1,55 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
+/// Rounded pill showing a report's status with a coloured dot.
 class StatusChip extends StatelessWidget {
   final String status;
 
-  const StatusChip({super.key, required this.status});
+  /// Smaller version for tight spaces such as item cards.
+  final bool compact;
+
+  const StatusChip({super.key, required this.status, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     final upperStatus = status.toUpperCase();
+    final (Color bgColor, Color textColor) = switch (upperStatus) {
+      'ACTIVE' => (AppColors.statusActiveBg, AppColors.statusActiveText),
+      'MATCHED' => (AppColors.statusMatchedBg, AppColors.statusMatchedText),
+      'CLAIMED' => (AppColors.statusClaimedBg, AppColors.statusClaimedText),
+      'UNCLAIMED' => (AppColors.statusUnclaimedBg, AppColors.statusUnclaimedText),
+      'RETURNED' => (AppColors.statusReturnedBg, AppColors.statusReturnedText),
+      _ => (AppColors.statusClosedBg, AppColors.statusClosedText),
+    };
 
-    Color bgColor;
-    Color textColor;
-
-    switch (upperStatus) {
-      case 'ACTIVE':
-        bgColor = AppColors.statusActiveBg;
-        textColor = AppColors.statusActiveText;
-        break;
-      case 'MATCHED':
-        bgColor = AppColors.statusMatchedBg;
-        textColor = AppColors.statusMatchedText;
-        break;
-      case 'CLAIMED':
-        bgColor = AppColors.statusClaimedBg;
-        textColor = AppColors.statusClaimedText;
-        break;
-      case 'UNCLAIMED':
-        bgColor = AppColors.statusUnclaimedBg;
-        textColor = AppColors.statusUnclaimedText;
-        break;
-      case 'RETURNED':
-        bgColor = AppColors.statusReturnedBg;
-        textColor = AppColors.statusReturnedText;
-        break;
-      case 'CLOSED':
-      default:
-        bgColor = AppColors.statusClosedBg;
-        textColor = AppColors.statusClosedText;
-        break;
-    }
+    final label = upperStatus.isEmpty
+        ? ''
+        : upperStatus[0] + upperStatus.substring(1).toLowerCase();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 3 : 5),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        upperStatus,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: textColor, shape: BoxShape.circle),
+          ),
+          SizedBox(width: compact ? 4 : 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: compact ? 10.5 : 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

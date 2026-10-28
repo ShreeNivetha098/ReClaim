@@ -20,7 +20,7 @@ class FirebaseService {
   );
 
   /// Local testing only: `--dart-define=USE_FIREBASE_EMULATORS=true` points the
-  /// web build at the Auth and Firestore emulators instead of the live project.
+  /// app at the Auth and Firestore emulators instead of the live project.
   static const _useEmulators = bool.fromEnvironment('USE_FIREBASE_EMULATORS');
 
   static Future<void> initialize() async {
@@ -44,6 +44,10 @@ class FirebaseService {
       } else {
         // iOS reads its configuration from ios/GoogleService-Info.plist.
         await Firebase.initializeApp();
+        if (_useEmulators) {
+          await auth.useAuthEmulator('localhost', 9099);
+          firestore.useFirestoreEmulator('localhost', 8080);
+        }
       }
       _isFirebaseInitialized = true;
       debugPrint('Firebase initialized successfully.');

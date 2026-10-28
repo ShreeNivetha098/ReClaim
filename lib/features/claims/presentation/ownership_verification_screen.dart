@@ -7,6 +7,7 @@ import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/models/claim_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/form_parts.dart';
 
 class OwnershipVerificationScreen extends ConsumerStatefulWidget {
   final FoundItemModel foundItem;
@@ -109,7 +110,7 @@ class _OwnershipVerificationScreenState extends ConsumerState<OwnershipVerificat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ownership Verification'),
+        title: const Text('Prove it is yours'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -120,42 +121,11 @@ class _OwnershipVerificationScreenState extends ConsumerState<OwnershipVerificat
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Claim Header Banner
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.secondary),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.security_rounded, color: AppColors.secondary, size: 32),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Claiming Item:',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
-                            Text(
-                              widget.foundItem.itemName,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              'Found at ${widget.foundItem.locationFound}',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                FormIntro(
+                  gradient: AppColors.foundGradient,
+                  icon: Icons.verified_user_rounded,
+                  title: 'Claiming: ${widget.foundItem.itemName}',
+                  subtitle: 'Found at ${widget.foundItem.locationFound}',
                 ),
                 const SizedBox(height: 20),
 

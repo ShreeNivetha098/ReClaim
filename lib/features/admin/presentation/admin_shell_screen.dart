@@ -179,7 +179,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
           Expanded(
             child: Text(
               _getPageTitle(GoRouterState.of(context).uri.toString()),
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -221,7 +221,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
               const SizedBox(width: 8),
               Text(
                 user?.name ?? 'Admin',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
@@ -242,8 +242,8 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
   Widget _buildSidebar(dynamic user, int selectedIdx, {required bool isCollapsed}) {
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        border: Border(right: BorderSide(color: Color(0xFF1E293B))),
+        color: Color(0xFF1E1B4B),
+        border: Border(right: BorderSide(color: Color(0xFF2E2A6B))),
       ),
       child: Column(
         children: [
@@ -257,18 +257,16 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryLight],
-                    ),
+                    gradient: AppColors.brandGradient,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.find_in_page_rounded, color: Colors.white, size: 20),
+                  child: const Icon(Icons.travel_explore_rounded, color: Colors.white, size: 20),
                 ),
                 if (!isCollapsed) ...[
                   const SizedBox(width: 12),
                   Text(
                     'ReClaim',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -278,7 +276,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
               ],
             ),
           ),
-          Container(height: 1, color: const Color(0xFF1E293B)),
+          Container(height: 1, color: const Color(0xFF2E2A6B)),
 
           // Navigation items
           Expanded(
@@ -322,7 +320,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
                           children: [
                             Icon(
                               isSelected ? item.activeIcon : item.icon,
-                              color: isSelected ? AppColors.primaryLight : const Color(0xFF94A3B8),
+                              color: isSelected ? AppColors.primaryLight : const Color(0xFFB4B2E0),
                               size: 22,
                             ),
                             if (!isCollapsed) ...[
@@ -330,10 +328,10 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
                               Expanded(
                                 child: Text(
                                   item.label,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 14,
                                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                    color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                                    color: isSelected ? Colors.white : const Color(0xFFB4B2E0),
                                   ),
                                 ),
                               ),
@@ -349,7 +347,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
           ),
 
           // Logout
-          Container(height: 1, color: const Color(0xFF1E293B)),
+          Container(height: 1, color: const Color(0xFF2E2A6B)),
           Padding(
             padding: const EdgeInsets.all(8),
             child: Material(
@@ -373,7 +371,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
                         const SizedBox(width: 14),
                         Text(
                           'Logout',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFFEF4444),
@@ -394,7 +392,7 @@ class _AdminShellScreenState extends ConsumerState<AdminShellScreen> {
 
   Drawer _buildDrawer(dynamic user, int selectedIdx) {
     return Drawer(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF1E1B4B),
       child: _buildSidebar(user, selectedIdx, isCollapsed: false),
     );
   }

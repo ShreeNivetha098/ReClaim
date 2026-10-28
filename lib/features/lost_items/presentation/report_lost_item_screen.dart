@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/services/image_store_service.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/form_parts.dart';
 import '../../../shared/widgets/item_image.dart';
 
 class ReportLostItemScreen extends ConsumerStatefulWidget {
@@ -255,68 +255,24 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Optional Image Picker Header
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 160,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: _hasPhoto
-                        ? Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: _photoPreview(),
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _imageBytes = null;
-                                      _existingImageUrl = null;
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.close, color: Colors.white, size: 18),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo_outlined, size: 40, color: AppColors.primary),
-                              SizedBox(height: 8),
-                              Text(
-                                'Upload Image (Optional)',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                'Photos help identify lost items faster',
-                                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                  ),
+                FormIntro(
+                  gradient: AppColors.lostGradient,
+                  icon: Icons.search_rounded,
+                  title: _isEditing ? 'Update your report' : 'Tell us what you lost',
+                  subtitle: 'The more detail you add, the better we can match it.',
+                ),
+                const SizedBox(height: 20),
+
+                PhotoPickerBox(
+                  preview: _hasPhoto ? _photoPreview() : null,
+                  onPick: _pickImage,
+                  onRemove: () => setState(() {
+                    _imageBytes = null;
+                    _existingImageUrl = null;
+                  }),
+                  title: 'Add a photo',
+                  subtitle: 'Optional, but it helps people recognise it',
+                  color: AppColors.lost,
                 ),
                 const SizedBox(height: 20),
 
@@ -329,30 +285,12 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category Dropdown
-                const Text(
-                  'Category *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.category_outlined),
-                  ),
-                  items: _categories
-                      .map((cat) => DropdownMenuItem(
-                            value: cat,
-                            child: Text(cat),
-                          ))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedCategory = val);
-                  },
+                // Category
+                const FieldLabel('Category *'),
+                CategoryPicker(
+                  selected: _selectedCategory,
+                  color: AppColors.lost,
+                  onChanged: (val) => setState(() => _selectedCategory = val),
                 ),
                 const SizedBox(height: 16),
 
@@ -388,38 +326,9 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Date Lost Selector
-                const Text(
-                  'Date Lost *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                InkWell(
-                  onTap: () => _selectDate(context),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          DateFormat('MMM dd, yyyy').format(_dateLost),
-                          style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
-                        ),
-                        const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
-                      ],
-                    ),
-                  ),
-                ),
+                // Date
+                const FieldLabel('Date lost *'),
+                DateField(date: _dateLost, onTap: () => _selectDate(context)),
                 const SizedBox(height: 16),
 
                 // Location Lost

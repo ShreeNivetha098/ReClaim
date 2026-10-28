@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/services/local_notification_service.dart';
 import '../../../shared/models/notification_model.dart';
+import '../../../shared/widgets/animations.dart';
 import '../../notifications/presentation/notification_navigation.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../search/presentation/search_screen.dart';
@@ -81,107 +83,54 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   void _showReportOptionsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Report an Item',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Choose what you would like to report to the campus community',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
+      builder: (sheetContext) {
+        void open(Widget screen) {
+          Navigator.pop(sheetContext);
+          Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+        }
 
-              // Report Lost Button
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'What happened?',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                 ),
-                tileColor: AppColors.primary.withValues(alpha: 0.05),
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.search_rounded, color: Colors.white),
+                const SizedBox(height: 4),
+                const Text(
+                  'Pick one and we will guide you through it.',
+                  style: TextStyle(color: AppColors.textSecondary),
                 ),
-                title: const Text(
-                  'Report Lost Item',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ReportChoice(
+                        gradient: AppColors.lostGradient,
+                        icon: Icons.search_rounded,
+                        title: 'I lost\nsomething',
+                        subtitle: 'Get alerted when it turns up',
+                        onTap: () => open(const ReportLostItemScreen()),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _ReportChoice(
+                        gradient: AppColors.foundGradient,
+                        icon: Icons.volunteer_activism_rounded,
+                        title: 'I found\nsomething',
+                        subtitle: 'Help it get back home',
+                        onTap: () => open(const ReportFoundItemScreen()),
+                      ),
+                    ),
+                  ],
                 ),
-                subtitle: const Text('I misplaced something on campus and need to find it'),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primary),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ReportLostItemScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Report Found Button
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.secondary, width: 1.5),
-                ),
-                tileColor: AppColors.secondary.withValues(alpha: 0.05),
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: AppColors.secondary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.inventory_2_outlined, color: Colors.white),
-                ),
-                title: const Text(
-                  'Report Found Item',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary),
-                ),
-                subtitle: const Text('I found an item on campus and want to return it to its owner'),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.secondary),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ReportFoundItemScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -207,50 +156,179 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
+      extendBody: true,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(key: ValueKey(_selectedIndex), child: screens[_selectedIndex]),
+      ),
+      bottomNavigationBar: _FloatingTabBar(
+        selectedIndex: _selectedIndex,
+        unreadCount: unreadNotifsCount,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+      ),
+    );
+  }
+}
+
+class _ReportChoice extends StatelessWidget {
+  final Gradient gradient;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ReportChoice({
+    required this.gradient,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onTap,
+      child: Container(
+        height: 170,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: AppStyles.borderRadiusLg,
+          boxShadow: AppStyles.softShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: Colors.white, size: 26),
+            ),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, height: 1.15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Rounded white tab bar that floats above the content, with a raised
+/// gradient "report" button in the middle.
+class _FloatingTabBar extends StatelessWidget {
+  final int selectedIndex;
+  final int unreadCount;
+  final ValueChanged<int> onTap;
+
+  const _FloatingTabBar({
+    required this.selectedIndex,
+    required this.unreadCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: Container(
+          height: 70,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow.withValues(alpha: 0.14),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
-            activeIcon: Icon(Icons.search_rounded),
-            label: 'Search',
+          child: Row(
+            children: [
+              _tab(0, Icons.home_outlined, Icons.home_rounded, 'Home'),
+              _tab(1, Icons.search_rounded, Icons.manage_search_rounded, 'Search'),
+              Expanded(
+                child: Center(
+                  child: PressableScale(
+                    onTap: () => onTap(2),
+                    pressedScale: 0.9,
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.brandGradient,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: AppStyles.floatingShadow,
+                      ),
+                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ),
+              ),
+              _tab(3, Icons.notifications_none_rounded, Icons.notifications_rounded, 'Alerts', badge: unreadCount),
+              _tab(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline_rounded, size: 30),
-            activeIcon: Icon(Icons.add_circle_rounded, size: 30),
-            label: 'Report',
+        ),
+      ),
+    );
+  }
+
+  Widget _tab(int index, IconData icon, IconData activeIcon, String label, {int badge = 0}) {
+    final selected = selectedIndex == index;
+    final color = selected ? AppColors.primary : AppColors.textMuted;
+    Widget iconWidget = Icon(selected ? activeIcon : icon, color: color, size: 25);
+    if (badge > 0) iconWidget = Badge.count(count: badge, backgroundColor: AppColors.lost, child: iconWidget);
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        child: PressableScale(
+          onTap: () => onTap(index),
+          pressedScale: 0.9,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.statusActiveBg : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: iconWidget,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: unreadNotifsCount > 0
-                ? Badge.count(
-                    count: unreadNotifsCount,
-                    child: const Icon(Icons.notifications_none_rounded),
-                  )
-                : const Icon(Icons.notifications_none_rounded),
-            activeIcon: unreadNotifsCount > 0
-                ? Badge.count(
-                    count: unreadNotifsCount,
-                    child: const Icon(Icons.notifications_rounded),
-                  )
-                : const Icon(Icons.notifications_rounded),
-            label: 'Notifications',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }

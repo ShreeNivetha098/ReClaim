@@ -26,12 +26,12 @@ class AdminVerificationPage extends ConsumerWidget {
         children: [
           Text(
             'College ID verification',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 4),
           Text(
             'Compare each photo with the name and roll number. The photo is deleted when you verify or reject.',
-            style: GoogleFonts.inter(color: AppColors.textSecondary),
+            style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 20),
           Expanded(
@@ -43,7 +43,7 @@ class AdminVerificationPage extends ConsumerWidget {
                 if (pending.isEmpty) {
                   return Center(
                     child: Text('No ID photos waiting for review.',
-                        style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                   );
                 }
                 return ListView.separated(
@@ -177,7 +177,7 @@ class _PendingUserCardState extends ConsumerState<_PendingUserCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user.name, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(user.name, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 _detail('Email', user.email),
                 _detail('Roll / ID', user.rollNumber),
@@ -217,10 +217,10 @@ class _PendingUserCardState extends ConsumerState<_PendingUserCard> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Text.rich(
         TextSpan(children: [
-          TextSpan(text: '$label: ', style: GoogleFonts.inter(color: AppColors.textSecondary)),
+          TextSpan(text: '$label: ', style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
           TextSpan(
             text: value.isEmpty ? '—' : value,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
           ),
         ]),
       ),

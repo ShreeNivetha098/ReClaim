@@ -37,11 +37,7 @@ class AdminOverviewPage extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: AppColors.brandGradient,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -56,7 +52,7 @@ class AdminOverviewPage extends ConsumerWidget {
                 children: [
                   Text(
                     'Welcome to the Admin Console',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -65,7 +61,7 @@ class AdminOverviewPage extends ConsumerWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Manage users, reports, and claims for the campus lost & found system.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       color: Colors.white70,
                     ),
@@ -217,7 +213,7 @@ class AdminOverviewPage extends ConsumerWidget {
               children: [
                 Text(
                   '${card.value}',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -229,7 +225,7 @@ class AdminOverviewPage extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         card.label,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
@@ -302,7 +298,7 @@ class AdminOverviewPage extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'Report Status Summary',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -313,7 +309,7 @@ class AdminOverviewPage extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(32.0),
                 child: Text('No report data available.',
-                    style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                    style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
               ),
             )
           else ...[
@@ -336,9 +332,9 @@ class AdminOverviewPage extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            Text(label, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
             Text('$count (${(percentage * 100).toStringAsFixed(1)}%)',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
           ],
         ),
         const SizedBox(height: 8),
@@ -371,7 +367,7 @@ class AdminOverviewPage extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'Recent Activity',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -384,7 +380,7 @@ class AdminOverviewPage extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Text('No recent activity.',
-                        style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                        style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
                   ),
                 );
               }
@@ -417,7 +413,7 @@ class AdminOverviewPage extends ConsumerWidget {
                             children: [
                               RichText(
                                 text: TextSpan(
-                                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.textPrimary),
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppColors.textPrimary),
                                   children: [
                                     TextSpan(text: log.actorName, style: const TextStyle(fontWeight: FontWeight.bold)),
                                     TextSpan(text: ' ${log.action} '),
@@ -429,13 +425,13 @@ class AdminOverviewPage extends ConsumerWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   log.details,
-                                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppColors.textSecondary),
                                 ),
                               ],
                               const SizedBox(height: 4),
                               Text(
                                 DateFormat('MMM d, yyyy • h:mm a').format(log.timestamp),
-                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
                               ),
                             ],
                           ),

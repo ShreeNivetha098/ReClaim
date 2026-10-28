@@ -91,7 +91,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     final isWide = screenWidth > 800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF1E1B4B),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -100,10 +100,10 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
             padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 40,
                   offset: const Offset(0, 12),
                 ),
@@ -118,10 +118,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryDark],
-                      ),
-                      shape: BoxShape.circle,
+                      gradient: AppColors.brandGradient,
+                      borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary.withValues(alpha: 0.3),
@@ -139,7 +137,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   const SizedBox(height: 20),
                   Text(
                     'ReClaim Admin',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -148,7 +146,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   const SizedBox(height: 6),
                   Text(
                     'Sign in to the administration dashboard',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       color: AppColors.textSecondary,
                     ),
@@ -241,7 +239,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                   // Footer
                   Text(
                     'ReClaim • Campus Lost & Found System',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       color: AppColors.textMuted,
                     ),

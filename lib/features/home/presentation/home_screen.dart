@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../shared/models/found_item_model.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/models/match_result_model.dart';
+import '../../../shared/widgets/animations.dart';
+import '../../../shared/widgets/category_style.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../shared/widgets/item_card.dart';
 import '../../lost_items/presentation/report_lost_item_screen.dart';
 import '../../found_items/presentation/report_found_item_screen.dart';
 import '../../item_details/presentation/item_details_screen.dart';
 import '../../matching/presentation/potential_matches_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final VoidCallback onNavigateToSearch;
   final VoidCallback onNavigateToNotifications;
 
@@ -21,312 +26,152 @@ class HomeScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _showLost = true;
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  void _open(Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  void _searchCategory(String category) {
+    ref.read(categoryFilterProvider.notifier).state = category;
+    widget.onNavigateToSearch();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final lostItemsAsync = ref.watch(activeLostItemsProvider);
     final foundItemsAsync = ref.watch(activeFoundItemsProvider);
-    // Full providers needed for refresh and matching
     final allLostItemsAsync = ref.watch(lostItemsProvider);
-
     final unreadNotifsCount = ref.watch(unreadNotificationsCountProvider);
 
+    final firstName = (user?.name.trim().isNotEmpty ?? false)
+        ? user!.name.trim().split(' ').first
+        : 'there';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.find_in_page_rounded, color: AppColors.primary, size: 22),
-            ),
-            const SizedBox(width: 10),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ReClaim',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Campus Lost & Found',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: unreadNotifsCount > 0
-                ? Badge.count(
-                    count: unreadNotifsCount,
-                    child: const Icon(Icons.notifications_none_rounded),
-                  )
-                : const Icon(Icons.notifications_none_rounded),
-            onPressed: onNavigateToNotifications,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.read(lostItemsProvider.notifier).loadLostItems();
-          ref.read(foundItemsProvider.notifier).loadFoundItems();
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: StatusBarScrim(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([
+              ref.read(lostItemsProvider.notifier).loadLostItems(),
+              ref.read(foundItemsProvider.notifier).loadFoundItems(),
+            ]);
+          },
+          child: ListView(
+            padding: EdgeInsets.zero,
             children: [
-              // User Greeting Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              _Header(
+                greeting: _greeting,
+                name: firstName,
+                initial: firstName.isNotEmpty
+                    ? firstName[0].toUpperCase()
+                    : 'U',
+                isVerified: user?.isVerified ?? false,
+                unreadCount: unreadNotifsCount,
+                onNotifications: widget.onNavigateToNotifications,
+                onSearch: widget.onNavigateToSearch,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome, ${user?.name ?? 'Student'} 👋',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${user?.department ?? 'Department'} • ${user?.role ?? 'Student'}',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
+                    // Quick actions
+                    FadeSlideIn(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _ActionTile(
+                              gradient: AppColors.lostGradient,
+                              icon: Icons.search_rounded,
+                              title: 'I lost\nsomething',
+                              onTap: () => _open(const ReportLostItemScreen()),
+                            ),
                           ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: _ActionTile(
+                              gradient: AppColors.foundGradient,
+                              icon: Icons.volunteer_activism_rounded,
+                              title: 'I found\nsomething',
+                              onTap: () => _open(const ReportFoundItemScreen()),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    _buildPotentialMatchBanner(allLostItemsAsync),
+
+                    const SizedBox(height: 26),
+                    const _SectionTitle('Browse by category'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 92,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        itemCount: itemCategories.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        itemBuilder: (context, index) {
+                          final category = itemCategories[index];
+                          return FadeSlideIn(
+                            index: index,
+                            child: _CategoryBubble(
+                              label: category,
+                              icon: categoryIcon(category),
+                              onTap: () => _searchCategory(category),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: _SectionTitle('Recently reported'),
+                        ),
+                        TextButton(
+                          onPressed: widget.onNavigateToSearch,
+                          child: const Text('See all'),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    _LostFoundToggle(
+                      showLost: _showLost,
+                      onChanged: (value) => setState(() => _showLost = value),
+                    ),
                     const SizedBox(height: 16),
-
-                    // Embedded Quick Search Bar
-                    GestureDetector(
-                      onTap: onNavigateToSearch,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search_rounded, color: AppColors.textMuted),
-                            SizedBox(width: 8),
-                            Text(
-                              'Search lost items, calculators, wallets...',
-                              style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: _showLost
+                          ? KeyedSubtree(
+                              key: const ValueKey('lost'),
+                              child: _buildLostGrid(lostItemsAsync),
+                            )
+                          : KeyedSubtree(
+                              key: const ValueKey('found'),
+                              child: _buildFoundGrid(foundItemsAsync),
                             ),
-                          ],
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Action Cards (Report Lost / Report Found)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionCard(
-                      context: context,
-                      title: 'Report Lost Item',
-                      subtitle: 'Misplaced an item?',
-                      icon: Icons.search_rounded,
-                      color: AppColors.primary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ReportLostItemScreen()),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildActionCard(
-                      context: context,
-                      title: 'Report Found Item',
-                      subtitle: 'Found someone\'s item?',
-                      icon: Icons.inventory_2_outlined,
-                      color: AppColors.secondary,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ReportFoundItemScreen()),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Potential Match Smart Notification Card
-              _buildPotentialMatchBanner(context, ref, allLostItemsAsync),
-
-              const SizedBox(height: 24),
-
-              // Recent Lost Items Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Lost Items',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: onNavigateToSearch,
-                    child: const Text('View All'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              lostItemsAsync.when(
-                data: (items) {
-                  if (items.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('No lost items reported yet.'),
-                    );
-                  }
-                  final recent = items.take(4).toList();
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.62,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: recent.length,
-                    itemBuilder: (context, index) {
-                      final item = recent[index];
-                      return ItemCard(
-                        title: item.itemName,
-                        category: item.category,
-                        location: item.locationLost,
-                        date: item.dateLost,
-                        createdAt: item.createdAt,
-                        imageUrl: item.imageUrl,
-                        status: item.status,
-                        isLost: true,
-                        reporterName: item.reporterName,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemDetailsScreen(lostItem: item),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, st) => Text('Error loading lost items: $err'),
-              ),
-              const SizedBox(height: 28),
-
-              // Recent Found Items Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Found Items',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: onNavigateToSearch,
-                    child: const Text('View All'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              foundItemsAsync.when(
-                data: (items) {
-                  if (items.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('No found items reported yet.'),
-                    );
-                  }
-                  final recent = items.take(4).toList();
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.62,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: recent.length,
-                    itemBuilder: (context, index) {
-                      final item = recent[index];
-                      return ItemCard(
-                        title: item.itemName,
-                        category: item.category,
-                        location: item.locationFound,
-                        date: item.dateFound,
-                        createdAt: item.createdAt,
-                        imageUrl: item.imageUrl,
-                        status: item.status,
-                        isLost: false,
-                        reporterName: item.reporterName,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemDetailsScreen(foundItem: item),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, st) => Text('Error loading found items: $err'),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -334,83 +179,100 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionCard({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
+  Widget _buildLostGrid(AsyncValue<List<LostItemModel>> async) {
+    return async.when(
+      data: (items) => _grid(
+        itemCount: items.take(6).length,
+        emptyTitle: 'Nothing lost right now',
+        emptyText: 'Lost reports from your campus will show up here.',
+        builder: (index) {
+          final item = items[index];
+          return ItemCard(
+            title: item.itemName,
+            category: item.category,
+            location: item.locationLost,
+            date: item.dateLost,
+            createdAt: item.createdAt,
+            imageUrl: item.imageUrl,
+            status: item.status,
+            isLost: true,
+            reporterName: item.reporterName,
+            onTap: () => _open(ItemDetailsScreen(lostItem: item)),
+          );
+        },
+      ),
+      loading: () => const _GridLoading(),
+      error: (err, _) => Text('Could not load lost items: $err'),
+    );
+  }
+
+  Widget _buildFoundGrid(AsyncValue<List<FoundItemModel>> async) {
+    return async.when(
+      data: (items) => _grid(
+        itemCount: items.take(6).length,
+        emptyTitle: 'Nothing found yet',
+        emptyText: 'Items people hand in will show up here.',
+        builder: (index) {
+          final item = items[index];
+          return ItemCard(
+            title: item.itemName,
+            category: item.category,
+            location: item.locationFound,
+            date: item.dateFound,
+            createdAt: item.createdAt,
+            imageUrl: item.imageUrl,
+            status: item.status,
+            isLost: false,
+            reporterName: item.reporterName,
+            onTap: () => _open(ItemDetailsScreen(foundItem: item)),
+          );
+        },
+      ),
+      loading: () => const _GridLoading(),
+      error: (err, _) => Text('Could not load found items: $err'),
+    );
+  }
+
+  Widget _grid({
+    required int itemCount,
+    required String emptyTitle,
+    required String emptyText,
+    required Widget Function(int index) builder,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    if (itemCount == 0) {
+      return EmptyStateWidget(
+        title: emptyTitle,
+        description: emptyText,
+        icon: Icons.inbox_rounded,
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisExtent: ItemCard.gridHeight,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      itemCount: itemCount,
+      itemBuilder: (context, index) =>
+          FadeSlideIn(index: index, child: builder(index)),
     );
   }
 
   Widget _buildPotentialMatchBanner(
-    BuildContext context,
-    WidgetRef ref,
     AsyncValue<List<LostItemModel>> lostItemsAsync,
   ) {
-    return lostItemsAsync.when(
+    return lostItemsAsync.maybeWhen(
       data: (lostItems) {
         // Only the signed-in user's own open lost reports.
         final uid = ref.watch(currentUserProvider)?.uid;
         final myOpenLost = lostItems.where((item) {
           final status = item.status.toUpperCase();
-          return item.ownerId == uid && (status == 'ACTIVE' || status == 'MATCHED');
+          return item.ownerId == uid &&
+              (status == 'ACTIVE' || status == 'MATCHED');
         });
 
         // Best match across all of them.
@@ -418,86 +280,523 @@ class HomeScreen extends ConsumerWidget {
         for (final lost in myOpenLost) {
           final matches = ref.watch(potentialMatchesProvider(lost));
           if (matches.isNotEmpty &&
-              (topMatch == null || matches.first.matchPercentage > topMatch.matchPercentage)) {
+              (topMatch == null ||
+                  matches.first.matchPercentage > topMatch.matchPercentage)) {
             topMatch = matches.first;
           }
         }
         if (topMatch == null) return const SizedBox.shrink();
-        final firstLost = topMatch.lostItem;
+        final match = topMatch;
 
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.accent, width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome, color: AppColors.accentDark, size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Smart Match Notification',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+        return Padding(
+          padding: const EdgeInsets.only(top: 18),
+          child: FadeSlideIn(
+            child: PressableScale(
+              onTap: () =>
+                  _open(PotentialMatchesScreen(lostItem: match.lostItem)),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF4D6), Color(0xFFFFE7C2)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: AppStyles.borderRadiusLg,
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 58,
+                      height: 58,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(
+                              begin: 0,
+                              end: match.matchPercentage / 100,
+                            ),
+                            duration: const Duration(milliseconds: 900),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, _) =>
+                                CircularProgressIndicator(
+                                  value: value,
+                                  strokeWidth: 5,
+                                  strokeCap: StrokeCap.round,
+                                  backgroundColor: Colors.white,
+                                  color: AppColors.accentDark,
+                                ),
+                          ),
+                          Text(
+                            '${match.matchPercentage.toStringAsFixed(0)}%',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.accentDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 16,
+                                color: AppColors.accentDark,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Possible match!',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.accentDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '"${match.foundItem.itemName}" looks like your ${match.lostItem.itemName}.',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
                       color: AppColors.accentDark,
                     ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  final String greeting;
+  final String name;
+  final String initial;
+  final bool isVerified;
+  final int unreadCount;
+  final VoidCallback onNotifications;
+  final VoidCallback onSearch;
+
+  const _Header({
+    required this.greeting,
+    required this.name,
+    required this.initial,
+    required this.isVerified,
+    required this.unreadCount,
+    required this.onNotifications,
+    required this.onSearch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppColors.brandGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      child: Stack(
+        children: [
+          // Soft decorative circles
+          Positioned(top: -40, right: -30, child: _bubble(160, 0.10)),
+          Positioned(bottom: -50, left: -40, child: _bubble(140, 0.08)),
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.white.withValues(alpha: 0.25),
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              greeting,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 13,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                if (isVerified) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.verified_rounded,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      PressableScale(
+                        onTap: onNotifications,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Badge(
+                            isLabelVisible: unreadCount > 0,
+                            label: Text('$unreadCount'),
+                            backgroundColor: AppColors.lost,
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Lost something on campus?\nLet\'s get it back.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
                     ),
-                    child: Text(
-                      '${topMatch.matchPercentage.toStringAsFixed(0)}% MATCH',
-                      style: const TextStyle(
+                  ),
+                  const SizedBox(height: 18),
+                  PressableScale(
+                    onTap: onSearch,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 15,
+                      ),
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.search_rounded, color: AppColors.primary),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Search wallets, keys, ID cards…',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.tune_rounded,
+                            color: AppColors.textMuted,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Found item "${topMatch.foundItem.itemName}" matches your reported lost item "${firstLost.itemName}".',
-                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PotentialMatchesScreen(lostItem: firstLost),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.visibility_rounded, size: 16),
-                  label: const Text('View Potential Matches'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bubble(double size, double opacity) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: opacity),
+      shape: BoxShape.circle,
+    ),
+  );
+}
+
+class _ActionTile extends StatelessWidget {
+  final Gradient gradient;
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _ActionTile({
+    required this.gradient,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onTap,
+      child: Container(
+        height: 118,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: AppStyles.borderRadiusLg,
+          boxShadow: AppStyles.softShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryBubble extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CategoryBubble({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onTap,
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppStyles.softShadow,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 26),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LostFoundToggle extends StatelessWidget {
+  final bool showLost;
+  final ValueChanged<bool> onChanged;
+
+  const _LostFoundToggle({required this.showLost, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        children: [
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            alignment: showLost ? Alignment.centerLeft : Alignment.centerRight,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: AppStyles.softShadow,
+                ),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              _option(
+                'Recently lost',
+                AppColors.lost,
+                selected: showLost,
+                onTap: () => onChanged(true),
+              ),
+              _option(
+                'Recently found',
+                AppColors.found,
+                selected: !showLost,
+                onTap: () => onChanged(false),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _option(
+    String label,
+    Color color, {
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: selected ? AppColors.textPrimary : AppColors.textMuted,
                 ),
               ),
             ],
           ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (err, st) => const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+}
+
+class _GridLoading extends StatelessWidget {
+  const _GridLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 }

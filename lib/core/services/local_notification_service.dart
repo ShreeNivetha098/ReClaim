@@ -18,6 +18,9 @@ class LocalNotificationService {
   /// tap handler. Returns the payload of the banner that launched the app, if any.
   static Future<String?> initialize() async {
     if (_initialized) return null;
+    // The screenshot tour (tool/screen_tour.py) skips the permission prompt,
+    // which would otherwise cover every screenshot.
+    if (const bool.fromEnvironment('SCREEN_TOUR')) return null;
     try {
       await _plugin.initialize(
         settings: const InitializationSettings(iOS: DarwinInitializationSettings()),
