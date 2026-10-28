@@ -1,11 +1,17 @@
 # ReClaim --- Smart Lost & Found for PSG Tech
 
-ReClaim is an **iOS** app, built with Flutter, that gives a college campus
-one place to report lost and found items, find likely matches between
-them, and return items to their owners after an ownership check.
+ReClaim gives a college campus one place to report lost and found
+items, find likely matches between them, and return items to their
+owners after an ownership check. One Flutter codebase builds two apps:
 
-The project targets **iPhone only** and runs entirely on the **free
-Firebase Spark plan**. No feature in this project requires a paid
+| App | Who uses it | Platform |
+|---|---|---|
+| **ReClaim** | Students and staff: report, search, match, claim | iOS |
+| **ReClaim Admin** | Administrators: users, reports, claims, statistics | Web (Firebase Hosting) |
+
+Each build only serves its own screens: the web build opens on the admin
+login and refuses non-admin accounts, and the iOS app has no admin
+screens. The project runs entirely on the **free Firebase Spark plan**. No feature in this project requires a paid
 Firebase plan or a paid Apple Developer account.
 
 ## Features
@@ -37,7 +43,7 @@ Firebase plan or a paid Apple Developer account.
     (lost) or returned (found), or delete it with its photo.
 -   **Claim decisions** are sent to the claimant as a notification and
     iOS banner, saying where to collect the item if approved.
--   **Admin dashboard**: users, lost and found reports, claims, items
+-   **Web admin dashboard**: users, lost and found reports, claims, items
     unclaimed after 30 days, activity log and statistics.
 -   **Item photos** saved in Firestore: photos are shrunk to at most
     1024 px on the phone and stored in the `itemImages` collection (see
@@ -50,7 +56,7 @@ See [Roadmap](#roadmap) for details.
 
 ## Tech Stack
 
--   **App:** Flutter and Dart, iOS only
+-   **Apps:** Flutter and Dart; iOS for users, web for admins
 -   **State management:** Riverpod
 -   **Navigation:** go_router
 -   **Backend:** Firebase Authentication and Cloud Firestore (Spark plan)
@@ -67,6 +73,7 @@ differently from a typical production app:
 | Match alerts | Remote push (FCM + APNs) | Firestore real-time listeners plus local notifications. Remote push on iOS needs a paid Apple Developer account and a server. |
 | Matching | Cloud Functions | Runs on the phone. Cloud Functions need the Blaze plan. |
 | Testing on iPhone | TestFlight | iOS Simulator, or a personal iPhone signed with a free Apple ID. |
+| Admin website | Paid web hosting | Firebase Hosting, free on the Spark plan. |
 
 **Known limits of this design:**
 -   Alerts reach a user only while the app is open or recently in the
@@ -98,6 +105,13 @@ differently from a typical production app:
     firebase deploy --only firestore:rules --project <your-project-id>
     ```
     Photo uploads are refused until these rules are deployed.
+6.  For the admin website, add a **Web** app in the Firebase console,
+    copy `firebase_web.example.json` to `firebase_web.json` and fill in
+    the values from the web app's config. `firebase_web.json` is in
+    `.gitignore`.
+7.  Give an account admin access by setting `role` to `Admin` on its
+    document in the Firestore `users` collection. The app never lets a
+    user make themselves an admin.
 
 ### Build and run
 ``` bash
@@ -112,6 +126,28 @@ flutter run
 > `~/Desktop` syncs to iCloud, iOS builds fail with *"resource fork,
 > Finder information, or similar detritus not allowed"*. Keep the
 > project in a folder that iCloud doesn't sync, such as `~/Developer`.
+
+### Admin website
+``` bash
+# Run locally in Chrome
+flutter run -d chrome --dart-define-from-file=firebase_web.json
+
+# Build and publish to Firebase Hosting
+flutter build web --release --dart-define-from-file=firebase_web.json
+firebase deploy --only hosting --project <your-project-id>
+```
+
+The live admin dashboard is at <https://reclaim-c4695.web.app>.
+
+**Use Chrome for the admin site.** Known issue: in Safari, signing in
+with a valid admin account shows "Access denied". Not yet fixed.
+
+Always pass `--dart-define-from-file=firebase_web.json`. Without it the
+site cannot reach Firebase, and the admin login says so.
+
+To try the admin site against local emulators instead of live data, add
+`--dart-define=USE_FIREBASE_EMULATORS=true` and start
+`firebase emulators:start --only auth,firestore`.
 
 To run on your own iPhone, open `ios/Runner.xcworkspace` in Xcode,
 choose your Apple ID team under *Signing & Capabilities*, connect the
@@ -128,7 +164,7 @@ lib/
 │   ├── services/     Firebase, repository and matching logic
 │   └── theme/
 ├── features/
-│   ├── admin/            admin dashboard
+│   ├── admin/            web admin dashboard
 │   ├── authentication/   login, register, password reset
 │   ├── claims/           ownership verification
 │   ├── found_items/      report a found item

@@ -14,7 +14,7 @@ abstract class AppRoutes {
   static const String claimItem = '/claim-item/:id';
   static const String profile = '/profile';
 
-  // Admin Dashboard Routes (Web)
+  // Admin Dashboard Routes (web build only)
   static const String adminLogin = '/admin/login';
   static const String adminDashboard = '/admin';
   static const String adminOverview = '/admin/overview';

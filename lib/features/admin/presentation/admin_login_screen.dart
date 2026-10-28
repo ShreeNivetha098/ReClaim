@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/firebase_service.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 
@@ -36,6 +38,16 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
 
   Future<void> _handleAdminLogin() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Without Firebase the app falls back to offline demo data, where every
+    // account is a student. Say so instead of a misleading "Access denied".
+    if (kIsWeb && !FirebaseService.isInitialized) {
+      setState(() {
+        _errorMessage = 'Cannot connect to Firebase. Run or build the admin site with '
+            '--dart-define-from-file=firebase_web.json.';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;

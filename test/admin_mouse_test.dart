@@ -8,6 +8,9 @@ import 'package:reclaim/core/services/reclaim_repository.dart';
 import 'package:reclaim/shared/models/user_model.dart';
 
 void main() {
+  // These tests drive the admin dashboard, which is the web build.
+  isAdminBuild = true;
+
   testWidgets('Admin overview mouse interaction test', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
