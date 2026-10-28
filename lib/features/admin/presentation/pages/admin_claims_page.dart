@@ -22,6 +22,8 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(claimsProvider);
+    // Users are needed to show each claimant's name and verification.
+    ref.watch(adminUsersProvider);
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -96,7 +98,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
               dataTextStyle: GoogleFonts.inter(fontSize: 13),
               columns: const [
                 DataColumn(label: Text('CLAIM ID')),
-                DataColumn(label: Text('CLAIMANT ID')),
+                DataColumn(label: Text('CLAIMANT')),
                 DataColumn(label: Text('FOUND ITEM')),
                 DataColumn(label: Text('LOST ITEM')),
                 DataColumn(label: Text('VERIFICATION')),
@@ -118,7 +120,7 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
         claim.id.length > 8 ? '${claim.id.substring(0, 8)}...' : claim.id,
         style: GoogleFonts.inter(fontWeight: FontWeight.w600),
       )),
-      DataCell(Text(claim.claimantId.length > 12 ? '${claim.claimantId.substring(0, 12)}...' : claim.claimantId)),
+      DataCell(_claimantCell(claim.claimantId)),
       DataCell(Text(claim.foundItemId.length > 12 ? '${claim.foundItemId.substring(0, 12)}...' : claim.foundItemId)),
       DataCell(Text(claim.lostItemId.isNotEmpty
           ? (claim.lostItemId.length > 12 ? '${claim.lostItemId.substring(0, 12)}...' : claim.lostItemId)
@@ -148,6 +150,33 @@ class _AdminClaimsPageState extends ConsumerState<AdminClaimsPage> {
             : Text(claim.status, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
       ),
     ]);
+  }
+
+  /// Claimant's name, with a tick when their college ID has been verified.
+  Widget _claimantCell(String claimantId) {
+    final users = ref.read(adminUsersProvider).value ?? const [];
+    final matches = users.where((u) => u.uid == claimantId);
+    if (matches.isEmpty) {
+      return Text(claimantId.length > 12 ? '${claimantId.substring(0, 12)}...' : claimantId);
+    }
+    final claimant = matches.first;
+    return Tooltip(
+      message: claimant.isVerified
+          ? 'College ID verified by ${claimant.verifiedBy ?? 'an admin'}'
+          : 'College ID not verified: check it in person at handover',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(claimant.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          const SizedBox(width: 4),
+          Icon(
+            claimant.isVerified ? Icons.verified_rounded : Icons.help_outline_rounded,
+            size: 16,
+            color: claimant.isVerified ? AppColors.success : AppColors.textMuted,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _actionButton(String label, Color color, IconData icon, VoidCallback onPressed) {

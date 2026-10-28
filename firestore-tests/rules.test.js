@@ -75,6 +75,82 @@ describe('users', () => {
   });
 });
 
+describe('college ID verification', () => {
+  const photo = (uid, size = 1024) => ({
+    uploaderId: uid, data: Bytes.fromUint8Array(new Uint8Array(size)),
+  });
+
+  test('a user can submit a photo and ask for review', async () => {
+    await assertSucceeds(setDoc(doc(db(STUDENT), 'idPhotos', STUDENT), photo(STUDENT)));
+    await assertSucceeds(updateDoc(doc(db(STUDENT), 'users', STUDENT),
+      { verificationStatus: 'PENDING', verificationNote: null, updatedAt: new Date() }));
+  });
+
+  test('a user cannot verify themselves', async () => {
+    await assertFails(updateDoc(doc(db(STUDENT), 'users', STUDENT), { verificationStatus: 'VERIFIED' }));
+    await assertFails(updateDoc(doc(db(STUDENT), 'users', STUDENT), { verifiedBy: 'Me' }));
+  });
+
+  test('a user cannot register as already verified', async () => {
+    await assertFails(setDoc(doc(db('newUser'), 'users', 'newUser'),
+      { role: 'Student', verificationStatus: 'VERIFIED', verifiedBy: 'Me' }));
+    await assertSucceeds(setDoc(doc(db('newUser'), 'users', 'newUser'),
+      { role: 'Student', verificationStatus: 'NONE' }));
+  });
+
+  test('a user can withdraw a pending request', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'users', STUDENT), { verificationStatus: 'PENDING' });
+    });
+    await assertSucceeds(updateDoc(doc(db(STUDENT), 'users', STUDENT),
+      { verificationStatus: 'NONE', verificationNote: null }));
+  });
+
+  test('a verified user can still edit their profile but cannot lose or fake the badge', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'users', STUDENT),
+        { verificationStatus: 'VERIFIED', verifiedBy: 'Dr. Admin' });
+    });
+    await assertSucceeds(updateDoc(doc(db(STUDENT), 'users', STUDENT), { phone: '9111111111' }));
+    await assertFails(updateDoc(doc(db(STUDENT), 'users', STUDENT), { verifiedBy: 'Someone else' }));
+    await assertFails(updateDoc(doc(db(STUDENT), 'users', STUDENT), { verificationStatus: 'PENDING' }));
+  });
+
+  test('ID photos are private to the user and admins', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'idPhotos', STUDENT), photo(STUDENT));
+    });
+    await assertSucceeds(getDoc(doc(db(STUDENT), 'idPhotos', STUDENT)));
+    await assertSucceeds(getDoc(doc(db(ADMIN), 'idPhotos', STUDENT)));
+    await assertFails(getDoc(doc(db(OTHER), 'idPhotos', STUDENT)));
+  });
+
+  test("a user cannot upload a photo for someone else, or one that is too large", async () => {
+    await assertFails(setDoc(doc(db(OTHER), 'idPhotos', STUDENT), photo(OTHER)));
+    await assertFails(setDoc(doc(db(STUDENT), 'idPhotos', STUDENT), photo(STUDENT, 901 * 1024)));
+  });
+
+  test('an admin verifies and deletes the photo in one batch', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'idPhotos', STUDENT), photo(STUDENT));
+      await updateDoc(doc(ctx.firestore(), 'users', STUDENT), { verificationStatus: 'PENDING' });
+    });
+    const fs = db(ADMIN);
+    const batch = writeBatch(fs);
+    batch.update(doc(fs, 'users', STUDENT),
+      { verificationStatus: 'VERIFIED', verifiedBy: 'Dr. Admin', verifiedAt: new Date() });
+    batch.delete(doc(fs, 'idPhotos', STUDENT));
+    await assertSucceeds(batch.commit());
+  });
+
+  test('another student cannot delete or replace a pending photo', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'idPhotos', STUDENT), photo(STUDENT));
+    });
+    await assertFails(deleteDoc(doc(db(OTHER), 'idPhotos', STUDENT)));
+  });
+});
+
 describe('lost and found reports', () => {
   test('a report cannot be created in someone else\'s name', async () => {
     await assertFails(setDoc(doc(db(STUDENT), 'lostItems', 'x'), { ownerId: OTHER }));

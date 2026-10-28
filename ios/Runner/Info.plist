@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ReClaim uses the camera so you can photograph your college ID card for account verification.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ReClaim needs access to your photos so you can attach a picture of a lost or found item.</string>
 	<key>UIApplicationSceneManifest</key>

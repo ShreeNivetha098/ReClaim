@@ -5,13 +5,26 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../verification/presentation/id_verification_card.dart';
 import 'my_reports_screen.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Pick up an admin's verification decision made since the app opened.
+    Future.microtask(() => ref.read(currentUserProvider.notifier).refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -59,6 +72,20 @@ class ProfileScreen extends ConsumerWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
+                  if (user?.isVerified ?? false) ...[
+                    const SizedBox(height: 4),
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified_rounded, size: 16, color: AppColors.success),
+                        SizedBox(width: 4),
+                        Text(
+                          'Verified',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.success),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -79,6 +106,11 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 28),
+
+            if (user != null) ...[
+              IdVerificationCard(user: user),
+              const SizedBox(height: 24),
+            ],
 
             // Profile Info List Card
             Container(

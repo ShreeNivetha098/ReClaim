@@ -15,6 +15,7 @@ import '../../features/admin/presentation/pages/admin_users_page.dart';
 import '../../features/admin/presentation/pages/admin_reports_page.dart';
 import '../../features/admin/presentation/pages/admin_claims_page.dart';
 import '../../features/admin/presentation/pages/admin_unclaimed_page.dart';
+import '../../features/admin/presentation/pages/admin_verification_page.dart';
 
 /// True for the admin dashboard (the web build); false for the student and
 /// staff app (iOS). Each build only serves its own screens.
@@ -123,6 +124,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: AppRoutes.adminUnclaimed,
           builder: (context, state) => const AdminUnclaimedPage(),
+        ),
+        GoRoute(
+          path: AppRoutes.adminVerification,
+          builder: (context, state) => const AdminVerificationPage(),
         ),
         GoRoute(
           path: AppRoutes.adminActivity,

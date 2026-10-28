@@ -187,6 +187,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                 DataColumn(label: Text('DEPARTMENT')),
                 DataColumn(label: Text('ROLL / ID')),
                 DataColumn(label: Text('ROLE')),
+                DataColumn(label: Text('COLLEGE ID')),
                 DataColumn(label: Text('STATUS')),
                 DataColumn(label: Text('ACTIONS')),
               ],
@@ -236,6 +237,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
         DataCell(Text(user.department)),
         DataCell(Text(user.rollNumber)),
         DataCell(_buildRoleChip(user.role)),
+        DataCell(_buildVerificationChip(user.verificationStatus)),
         DataCell(_buildStatusChip(user.isActive)),
         DataCell(
           isSelf
@@ -281,6 +283,25 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                   ],
                 ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildVerificationChip(String status) {
+    final (label, color) = switch (status) {
+      'VERIFIED' => ('Verified', AppColors.success),
+      'PENDING' => ('Pending', AppColors.warning),
+      'REJECTED' => ('Rejected', AppColors.error),
+      _ => ('Not verified', AppColors.textMuted),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (status == 'VERIFIED') ...[
+          Icon(Icons.verified_rounded, size: 16, color: color),
+          const SizedBox(width: 4),
+        ],
+        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
       ],
     );
   }
