@@ -9,7 +9,6 @@ import '../../lost_items/presentation/report_lost_item_screen.dart';
 import '../../found_items/presentation/report_found_item_screen.dart';
 import '../../item_details/presentation/item_details_screen.dart';
 import '../../matching/presentation/potential_matches_screen.dart';
-import '../../admin/presentation/admin_dashboard_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   final VoidCallback onNavigateToSearch;
@@ -29,7 +28,6 @@ class HomeScreen extends ConsumerWidget {
     // Full providers needed for refresh and matching
     final allLostItemsAsync = ref.watch(lostItemsProvider);
 
-    final isAdmin = user?.role.toLowerCase() == 'admin';
     final unreadNotifsCount = ref.watch(unreadNotificationsCountProvider);
 
     return Scaffold(
@@ -123,22 +121,6 @@ class HomeScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        if (isAdmin)
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.admin_panel_settings_rounded, size: 16),
-                            label: const Text('Admin'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 16),

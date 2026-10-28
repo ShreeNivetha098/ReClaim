@@ -81,6 +81,7 @@ ios/GoogleService-Info.plist
 ios/Runner/GoogleService-Info.plist
 macos/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
+firebase_web.json
 .firebaserc
 .firebase/
 firebase-adminsdk*.json

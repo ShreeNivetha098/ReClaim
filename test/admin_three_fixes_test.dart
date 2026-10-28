@@ -24,6 +24,9 @@ class MockAdminUsersNotifier extends StateNotifier<AsyncValue<List<UserModel>>>
 }
 
 void main() {
+  // These tests drive the admin dashboard, which is the web build.
+  isAdminBuild = true;
+
   final currentAdminUser = UserModel(
     uid: 'admin_101',
     name: 'Dr. Rajesh Sharma',

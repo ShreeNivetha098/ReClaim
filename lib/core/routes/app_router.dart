@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'app_routes.dart';
 import '../services/firebase_service.dart';
@@ -15,12 +16,20 @@ import '../../features/admin/presentation/pages/admin_reports_page.dart';
 import '../../features/admin/presentation/pages/admin_claims_page.dart';
 import '../../features/admin/presentation/pages/admin_unclaimed_page.dart';
 
+/// True for the admin dashboard (the web build); false for the student and
+/// staff app (iOS). Each build only serves its own screens.
+@visibleForTesting
+bool isAdminBuild = kIsWeb;
+
 final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.splash,
+  initialLocation: isAdminBuild ? AppRoutes.adminLogin : AppRoutes.splash,
   redirect: (context, state) {
     final path = state.uri.toString();
     final isNavigatingToAdmin = path.startsWith('/admin');
     final isNavigatingToAdminLogin = path == AppRoutes.adminLogin;
+
+    if (isAdminBuild && !isNavigatingToAdmin) return AppRoutes.adminLogin;
+    if (!isAdminBuild && isNavigatingToAdmin) return AppRoutes.splash;
 
     if (isNavigatingToAdmin && !isNavigatingToAdminLogin) {
       final firebaseUser = FirebaseService.isInitialized ? FirebaseService.auth.currentUser : null;
