@@ -13,6 +13,7 @@ import '../../features/admin/presentation/admin_shell_screen.dart';
 import '../../features/admin/presentation/pages/admin_overview_page.dart';
 import '../../features/admin/presentation/pages/admin_users_page.dart';
 import '../../features/admin/presentation/pages/admin_reports_page.dart';
+import '../../features/admin/presentation/pages/admin_analytics_page.dart';
 import '../../features/admin/presentation/pages/admin_claims_page.dart';
 import '../../features/admin/presentation/pages/admin_unclaimed_page.dart';
 import '../../features/admin/presentation/pages/admin_verification_page.dart';
@@ -135,7 +136,7 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.adminAnalytics,
-          builder: (context, state) => const AdminOverviewPage(),
+          builder: (context, state) => const AdminAnalyticsPage(),
         ),
       ],
     ),

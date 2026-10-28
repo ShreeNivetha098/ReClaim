@@ -50,6 +50,10 @@ Firebase plan or a paid Apple Developer account.
     step, so no ID images are kept. Verified users get a badge, and the
     admin Claims table shows whether a claimant is verified. Government
     IDs (Aadhaar, PAN) are deliberately not collected.
+-   **Recovery analytics** on the web dashboard: recovery rate, average
+    time from report to recovery, reports per month (lost vs found),
+    recovery rate by category, places where items are most often lost,
+    claim outcomes and the share of verified users.
 -   **Web admin dashboard**: users, lost and found reports, claims, items
     unclaimed after 30 days, activity log and statistics.
 -   **Item photos** saved in Firestore: photos are shrunk to at most
@@ -239,7 +243,7 @@ flutter analyze
 flutter test
 ```
 
-Latest run: **55 tests passing** and **no analyzer issues**.
+Latest run: **62 tests passing** and **no analyzer issues**.
 
 ### Security-rule tests
 `firestore-tests/` checks `firestore.rules` against the local Firestore
