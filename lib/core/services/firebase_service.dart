@@ -19,6 +19,10 @@ class FirebaseService {
     storageBucket: String.fromEnvironment('FIREBASE_WEB_STORAGE_BUCKET'),
   );
 
+  /// Local testing only: `--dart-define=USE_FIREBASE_EMULATORS=true` points the
+  /// web build at the Auth and Firestore emulators instead of the live project.
+  static const _useEmulators = bool.fromEnvironment('USE_FIREBASE_EMULATORS');
+
   static Future<void> initialize() async {
     try {
       if (Firebase.apps.isNotEmpty) {
@@ -30,6 +34,10 @@ class FirebaseService {
           throw StateError('Missing web config. Build with --dart-define-from-file=firebase_web.json');
         }
         await Firebase.initializeApp(options: _webOptions);
+        if (_useEmulators) {
+          await auth.useAuthEmulator('localhost', 9099);
+          firestore.useFirestoreEmulator('localhost', 8080);
+        }
         // The browser restores a saved login asynchronously; wait for it so
         // reloading the admin dashboard does not sign the admin out.
         await auth.authStateChanges().first;

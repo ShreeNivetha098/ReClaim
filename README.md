@@ -139,6 +139,13 @@ firebase deploy --only hosting --project <your-project-id>
 
 The live admin dashboard is at <https://reclaim-c4695.web.app>.
 
+Always pass `--dart-define-from-file=firebase_web.json`. Without it the
+site cannot reach Firebase, and the admin login says so.
+
+To try the admin site against local emulators instead of live data, add
+`--dart-define=USE_FIREBASE_EMULATORS=true` and start
+`firebase emulators:start --only auth,firestore`.
+
 To run on your own iPhone, open `ios/Runner.xcworkspace` in Xcode,
 choose your Apple ID team under *Signing & Capabilities*, connect the
 phone, and run `flutter run`.
