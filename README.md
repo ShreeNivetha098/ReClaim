@@ -32,6 +32,11 @@ Firebase plan or a paid Apple Developer account.
 -   **Claims**: a user claims a found item by answering ownership
     questions; an admin approves or rejects the claim, and approval
     marks both items as claimed.
+-   **Manage your own reports**: from an item's details screen the
+    person who reported it can edit it, mark it as recovered
+    (lost) or returned (found), or delete it with its photo.
+-   **Claim decisions** are sent to the claimant as a notification and
+    iOS banner, saying where to collect the item if approved.
 -   **Admin dashboard**: users, lost and found reports, claims, items
     unclaimed after 30 days, activity log and statistics.
 -   **Item photos** saved in Firestore: photos are shrunk to at most
@@ -40,8 +45,8 @@ Firebase plan or a paid Apple Developer account.
 
 ### In progress
 See [Roadmap](#roadmap) for details.
--   Edit, delete and "mark as recovered" for a user's own reports.
--   Notifications for claim decisions.
+-   In-app chat between owner and finder.
+-   Moving the 30-day "unclaimed" check off users' phones.
 
 ## Tech Stack
 
@@ -162,7 +167,7 @@ flutter analyze
 flutter test
 ```
 
-Latest run: **39 tests passing** and **no analyzer issues**.
+Latest run: **47 tests passing** and **no analyzer issues**.
 
 ### Security-rule tests
 `firestore-tests/` checks `firestore.rules` against the local Firestore
@@ -173,7 +178,7 @@ npm --prefix firestore-tests install
 firebase emulators:exec --project demo-reclaim --only firestore "npm --prefix firestore-tests test"
 ```
 
-Latest run: **28 rule tests passing**.
+Latest run: **31 rule tests passing**.
 
 ## Roadmap
 
@@ -186,10 +191,11 @@ Planned work, all within the free Firebase plan:
     notifications, chat creation, activity log) and remove the demo
     role-switch button; rules are covered by emulator tests.
 4.  **Done:** Match in both directions and notify only the lost
-    report's owner with an iOS banner. Claim-decision notifications
-    are still to do.
-5.  Add edit, delete and "mark as recovered" to My Reports; let the
-    finder record a hidden detail for ownership checks.
+    report's owner with an iOS banner; notify claimants of claim
+    decisions.
+5.  **Done:** Edit, delete and "mark as recovered" for a user's own
+    reports. Still to do: let the finder record a hidden detail for
+    ownership checks.
 6.  **Done:** Add automated tests for matching.
 7.  Decide on in-app chat (Firestore-based) and on-device image
     analysis, or keep them as future work.

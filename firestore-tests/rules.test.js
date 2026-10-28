@@ -92,6 +92,17 @@ describe('lost and found reports', () => {
     await assertFails(updateDoc(doc(db(STUDENT), 'lostItems', 'lost1'), { ownerId: OTHER }));
   });
 
+  test('an owner can edit the details of their report', async () => {
+    await assertSucceeds(updateDoc(doc(db(STUDENT), 'lostItems', 'lost1'),
+      { itemName: 'Black wallet', locationLost: 'Library' }));
+    await assertSucceeds(updateDoc(doc(db(OTHER), 'foundItems', 'found1'), { currentHolder: 'Security office' }));
+  });
+
+  test('an owner can delete their own report', async () => {
+    await assertSucceeds(deleteDoc(doc(db(STUDENT), 'lostItems', 'lost1')));
+    await assertSucceeds(deleteDoc(doc(db(OTHER), 'foundItems', 'found1')));
+  });
+
   test('an admin can moderate any report', async () => {
     await assertSucceeds(updateDoc(doc(db(ADMIN), 'lostItems', 'lost1'), { status: 'UNCLAIMED' }));
     await assertSucceeds(deleteDoc(doc(db(ADMIN), 'foundItems', 'found1')));
@@ -102,6 +113,15 @@ describe('claims', () => {
   test('a student cannot approve a claim', async () => {
     await assertFails(updateDoc(doc(db(STUDENT), 'claims', 'claim1'), { status: 'APPROVED' }));
     await assertSucceeds(updateDoc(doc(db(ADMIN), 'claims', 'claim1'), { status: 'APPROVED' }));
+  });
+
+  test('only an admin can tell a claimant about the decision', async () => {
+    const decision = {
+      userId: STUDENT, type: 'CLAIM_APPROVED', title: 'Claim approved', body: 'b',
+      targetId: 'found1', itemType: 'FOUND', isRead: false,
+    };
+    await assertSucceeds(setDoc(doc(db(ADMIN), 'notifications', 'claim_claim1_approved'), decision));
+    await assertFails(setDoc(doc(db(OTHER), 'notifications', 'fake'), decision));
   });
 
   test('a claim cannot be filed for someone else', async () => {

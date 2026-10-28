@@ -433,6 +433,100 @@ class ReClaimRepository {
   }
 
   // ---------------------------------------------------------------------------
+  // OWNER ACTIONS (edit, mark as recovered, delete own reports)
+  // Unlike the admin helpers above, these let errors reach the caller so a
+  // screen never reports success for a write the security rules refused.
+  // ---------------------------------------------------------------------------
+
+  /// Fields an owner's edit must never overwrite.
+  static const _ownerProtectedFields = {'id', 'ownerId', 'finderId', 'status', 'createdAt'};
+
+  Future<void> updateLostItem(LostItemModel item) async {
+    final updated = item.copyWith(updatedAt: DateTime.now());
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore
+          .collection('lostItems')
+          .doc(item.id)
+          .update(updated.toMap()..removeWhere((key, _) => _ownerProtectedFields.contains(key)));
+    }
+    final index = _mockLostItems.indexWhere((i) => i.id == item.id);
+    if (index != -1) _mockLostItems[index] = updated;
+
+    // New details may match found items that did not match before.
+    try {
+      await _notifyMatchesForLostItem(updated);
+    } catch (e) {
+      debugPrint('Match notification failed for edited lost item ${item.id}: $e');
+    }
+  }
+
+  Future<void> updateFoundItem(FoundItemModel item) async {
+    final updated = item.copyWith(updatedAt: DateTime.now());
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore
+          .collection('foundItems')
+          .doc(item.id)
+          .update(updated.toMap()..removeWhere((key, _) => _ownerProtectedFields.contains(key)));
+    }
+    final index = _mockFoundItems.indexWhere((i) => i.id == item.id);
+    if (index != -1) _mockFoundItems[index] = updated;
+
+    try {
+      await _notifyMatchesForFoundItem(updated);
+    } catch (e) {
+      debugPrint('Match notification failed for edited found item ${item.id}: $e');
+    }
+  }
+
+  /// The owner got their item back, so the lost report is closed.
+  Future<void> markLostItemRecovered(String itemId) async {
+    final now = DateTime.now();
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore.collection('lostItems').doc(itemId).update({
+        'status': AppConstants.statusReturned,
+        'updatedAt': Timestamp.fromDate(now),
+      });
+    }
+    final index = _mockLostItems.indexWhere((i) => i.id == itemId);
+    if (index != -1) {
+      _mockLostItems[index] =
+          _mockLostItems[index].copyWith(status: AppConstants.statusReturned, updatedAt: now);
+    }
+  }
+
+  /// The finder handed the item back, so the found report is closed.
+  Future<void> markFoundItemReturned(String itemId) async {
+    final now = DateTime.now();
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore.collection('foundItems').doc(itemId).update({
+        'status': AppConstants.statusReturned,
+        'updatedAt': Timestamp.fromDate(now),
+      });
+    }
+    final index = _mockFoundItems.indexWhere((i) => i.id == itemId);
+    if (index != -1) {
+      _mockFoundItems[index] =
+          _mockFoundItems[index].copyWith(status: AppConstants.statusReturned, updatedAt: now);
+    }
+  }
+
+  Future<void> deleteOwnLostItem(LostItemModel item) async {
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore.collection('lostItems').doc(item.id).delete();
+    }
+    await ImageStoreService.delete(item.imageUrl);
+    _mockLostItems.removeWhere((i) => i.id == item.id);
+  }
+
+  Future<void> deleteOwnFoundItem(FoundItemModel item) async {
+    if (FirebaseService.isInitialized) {
+      await FirebaseService.firestore.collection('foundItems').doc(item.id).delete();
+    }
+    await ImageStoreService.delete(item.imageUrl);
+    _mockFoundItems.removeWhere((i) => i.id == item.id);
+  }
+
+  // ---------------------------------------------------------------------------
   // CLAIMS OPERATIONS
   // ---------------------------------------------------------------------------
 
@@ -553,6 +647,7 @@ Future<void> updateClaimStatus(String claimId, String newStatus) async {
       );
     }
 
+    await _notifyClaimDecision(claim, normalizedStatus);
     return;
   }
 
@@ -579,7 +674,42 @@ Future<void> updateClaimStatus(String claimId, String newStatus) async {
       await updateFoundItemStatus(updatedClaim.foundItemId, 'CLAIMED');
     }
   }
+
+  await _notifyClaimDecision(updatedClaim, normalizedStatus);
 }
+
+  /// Tells the claimant whether their claim was approved or rejected.
+  /// The decision is already saved, so a failed notification is only logged.
+  Future<void> _notifyClaimDecision(ClaimModel claim, String status) async {
+    if (status != 'APPROVED' && status != 'REJECTED') return;
+    if (claim.claimantId.isEmpty) return;
+
+    try {
+      final item = await getFoundItemById(claim.foundItemId);
+      final itemName = item?.itemName ?? 'the item';
+      final holder = item?.currentHolder.trim() ?? '';
+      final approved = status == 'APPROVED';
+
+      await createNotification(
+        NotificationModel(
+          id: 'claim_${claim.id}_${status.toLowerCase()}',
+          userId: claim.claimantId,
+          title: approved ? 'Claim approved: $itemName' : 'Claim not approved: $itemName',
+          body: approved
+              ? 'Your ownership was verified. Collect it from '
+                  '${holder.isEmpty ? 'the campus security office' : holder}.'
+              : 'The admin could not verify your ownership. Contact the campus '
+                  'security office if you think this is a mistake.',
+          type: approved ? 'CLAIM_APPROVED' : 'CLAIM_REJECTED',
+          targetId: claim.foundItemId,
+          itemType: 'FOUND',
+          createdAt: DateTime.now(),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Claim decision notification failed for ${claim.id}: $e');
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // CHAT & NOTIFICATIONS

@@ -43,27 +43,29 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   Future<void> _setUpMatchBanners() async {
     LocalNotificationService.onTap = (payload) {
-      if (mounted) openMatchPayload(context, ref, payload);
+      if (mounted) openFoundItemPayload(context, ref, payload);
     };
     final launchPayload = await LocalNotificationService.initialize();
     if (launchPayload != null && mounted) {
-      openMatchPayload(context, ref, launchPayload);
+      openFoundItemPayload(context, ref, launchPayload);
     }
   }
 
-  /// Raises an iOS banner for each new match notification addressed to this user.
+  /// Raises an iOS banner for each new match or claim-decision notification.
   void _onNotificationsChanged(List<NotificationModel> notifications) {
     final seen = _seenNotificationIds;
     _seenNotificationIds = notifications.map((n) => n.id).toSet();
     if (seen == null) return;
 
     for (final notif in notifications) {
-      if (seen.contains(notif.id) || notif.isRead || notif.type != 'POTENTIAL_MATCH') continue;
+      if (seen.contains(notif.id) || notif.isRead || !foundItemNotificationTypes.contains(notif.type)) {
+        continue;
+      }
       LocalNotificationService.show(
         id: notif.id,
         title: notif.title,
         body: notif.body,
-        payload: matchPayload(notif.id, notif.targetId),
+        payload: foundItemPayload(notif.id, notif.targetId),
       );
     }
   }

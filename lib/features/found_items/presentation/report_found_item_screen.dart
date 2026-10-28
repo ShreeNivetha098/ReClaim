@@ -9,9 +9,13 @@ import '../../../core/services/image_store_service.dart';
 import '../../../shared/models/found_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/item_image.dart';
 
 class ReportFoundItemScreen extends ConsumerStatefulWidget {
-  const ReportFoundItemScreen({super.key});
+  /// When set, the form edits this report instead of creating a new one.
+  final FoundItemModel? existingItem;
+
+  const ReportFoundItemScreen({super.key, this.existingItem});
 
   @override
   ConsumerState<ReportFoundItemScreen> createState() => _ReportFoundItemScreenState();
@@ -29,8 +33,12 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
   String _selectedCategory = 'ID Card';
   DateTime _dateFound = DateTime.now();
   Uint8List? _imageBytes;
+  String? _existingImageUrl;
   bool _securityOfficeSubmitted = false;
   bool _isSubmitting = false;
+
+  bool get _isEditing => widget.existingItem != null;
+  bool get _hasPhoto => _imageBytes != null || (_existingImageUrl?.isNotEmpty ?? false);
 
   final List<String> _categories = [
     'ID Card',
@@ -45,6 +53,24 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
     'Accessories',
     'Other',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.existingItem;
+    if (item == null) return;
+    String orBlank(String value) => value == 'N/A' ? '' : value;
+    _itemNameController.text = item.itemName;
+    _descriptionController.text = item.description;
+    _brandController.text = orBlank(item.brand);
+    _colourController.text = orBlank(item.colour);
+    _locationController.text = item.locationFound;
+    _currentHolderController.text = item.currentHolder;
+    _selectedCategory = _categories.contains(item.category) ? item.category : 'Other';
+    _dateFound = item.dateFound;
+    _securityOfficeSubmitted = item.securityOfficeSubmitted;
+    _existingImageUrl = item.imageUrl;
+  }
 
   @override
   void dispose() {
@@ -86,11 +112,17 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
     }
   }
 
+  /// Reports go back 90 days, or further when editing an older report.
+  DateTime get _earliestDate {
+    final limit = DateTime.now().subtract(const Duration(days: 90));
+    return _dateFound.isBefore(limit) ? _dateFound : limit;
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _dateFound,
-      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+      firstDate: _earliestDate,
       lastDate: DateTime.now(),
     );
     if (picked != null) {
@@ -110,6 +142,11 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
       String? uploadedImageUrl;
       if (_imageBytes != null) {
         uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!);
+      }
+
+      if (_isEditing) {
+        await _saveChanges(uploadedImageUrl);
+        return;
       }
 
       final now = DateTime.now();
@@ -162,11 +199,61 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
     }
   }
 
+  Future<void> _saveChanges(String? uploadedImageUrl) async {
+    final existing = widget.existingItem!;
+    final updated = existing.copyWith(
+      itemName: _itemNameController.text.trim(),
+      category: _selectedCategory,
+      description: _descriptionController.text.trim(),
+      brand: _brandController.text.trim().isEmpty ? 'N/A' : _brandController.text.trim(),
+      colour: _colourController.text.trim().isEmpty ? 'N/A' : _colourController.text.trim(),
+      dateFound: _dateFound,
+      locationFound: _locationController.text.trim(),
+      imageUrl: uploadedImageUrl ?? _existingImageUrl ?? '',
+      currentHolder: _currentHolderController.text.trim().isEmpty
+          ? 'Finder / Security Office'
+          : _currentHolderController.text.trim(),
+      securityOfficeSubmitted: _securityOfficeSubmitted,
+    );
+
+    await ref.read(foundItemsProvider.notifier).updateFoundItem(updated);
+    if (existing.imageUrl != updated.imageUrl) {
+      await ImageStoreService.delete(existing.imageUrl);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Found item report updated'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context, true);
+    }
+  }
+
+  Widget _photoPreview() {
+    if (_imageBytes != null) {
+      return Image.memory(
+        _imageBytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return ItemImage(
+      imageUrl: _existingImageUrl!,
+      fit: BoxFit.cover,
+      placeholder: (_) => const Center(child: CircularProgressIndicator()),
+      error: (_) => const Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textMuted),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report Found Item'),
+        title: Text(_isEditing ? 'Edit Found Item' : 'Report Found Item'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -185,22 +272,17 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                       color: AppColors.secondary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: _imageBytes != null ? AppColors.secondary : AppColors.divider,
+                        color: _hasPhoto ? AppColors.secondary : AppColors.divider,
                         width: 1,
                       ),
                     ),
-                    child: _imageBytes != null
+                    child: _hasPhoto
                         ? Stack(
                             fit: StackFit.expand,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.memory(
-                                  _imageBytes!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
+                                child: _photoPreview(),
                               ),
                               Positioned(
                                 top: 8,
@@ -209,6 +291,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
                                   onTap: () {
                                     setState(() {
                                       _imageBytes = null;
+                                      _existingImageUrl = null;
                                     });
                                   },
                                   child: Container(
@@ -388,7 +471,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
 
                 // Submit Button
                 CustomButton(
-                  text: 'Submit Found Item Report',
+                  text: _isEditing ? 'Save Changes' : 'Submit Found Item Report',
                   type: CustomButtonType.secondary,
                   isLoading: _isSubmitting,
                   onPressed: _handleSubmit,

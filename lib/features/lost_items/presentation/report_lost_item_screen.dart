@@ -9,9 +9,13 @@ import '../../../core/services/image_store_service.dart';
 import '../../../shared/models/lost_item_model.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
+import '../../../shared/widgets/item_image.dart';
 
 class ReportLostItemScreen extends ConsumerStatefulWidget {
-  const ReportLostItemScreen({super.key});
+  /// When set, the form edits this report instead of creating a new one.
+  final LostItemModel? existingItem;
+
+  const ReportLostItemScreen({super.key, this.existingItem});
 
   @override
   ConsumerState<ReportLostItemScreen> createState() => _ReportLostItemScreenState();
@@ -29,7 +33,11 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
   String _selectedCategory = 'ID Card';
   DateTime _dateLost = DateTime.now();
   Uint8List? _imageBytes;
+  String? _existingImageUrl;
   bool _isSubmitting = false;
+
+  bool get _isEditing => widget.existingItem != null;
+  bool get _hasPhoto => _imageBytes != null || (_existingImageUrl?.isNotEmpty ?? false);
 
   final List<String> _categories = [
     'ID Card',
@@ -44,6 +52,23 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
     'Accessories',
     'Other',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.existingItem;
+    if (item == null) return;
+    String orBlank(String value) => value == 'N/A' ? '' : value;
+    _itemNameController.text = item.itemName;
+    _descriptionController.text = item.description;
+    _brandController.text = orBlank(item.brand);
+    _colourController.text = orBlank(item.colour);
+    _locationController.text = item.locationLost;
+    _valueController.text = orBlank(item.approximateValue);
+    _selectedCategory = _categories.contains(item.category) ? item.category : 'Other';
+    _dateLost = item.dateLost;
+    _existingImageUrl = item.imageUrl;
+  }
 
   @override
   void dispose() {
@@ -85,11 +110,17 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
     }
   }
 
+  /// Reports go back 90 days, or further when editing an older report.
+  DateTime get _earliestDate {
+    final limit = DateTime.now().subtract(const Duration(days: 90));
+    return _dateLost.isBefore(limit) ? _dateLost : limit;
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _dateLost,
-      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+      firstDate: _earliestDate,
       lastDate: DateTime.now(),
     );
     if (picked != null) {
@@ -109,6 +140,11 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
       String? uploadedImageUrl;
       if (_imageBytes != null) {
         uploadedImageUrl = await repo.uploadImageBytes(_imageBytes!);
+      }
+
+      if (_isEditing) {
+        await _saveChanges(uploadedImageUrl);
+        return;
       }
 
       final now = DateTime.now();
@@ -158,11 +194,58 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
     }
   }
 
+  Future<void> _saveChanges(String? uploadedImageUrl) async {
+    final existing = widget.existingItem!;
+    final updated = existing.copyWith(
+      itemName: _itemNameController.text.trim(),
+      category: _selectedCategory,
+      description: _descriptionController.text.trim(),
+      brand: _brandController.text.trim().isEmpty ? 'N/A' : _brandController.text.trim(),
+      colour: _colourController.text.trim().isEmpty ? 'N/A' : _colourController.text.trim(),
+      dateLost: _dateLost,
+      locationLost: _locationController.text.trim(),
+      approximateValue: _valueController.text.trim().isEmpty ? 'N/A' : _valueController.text.trim(),
+      imageUrl: uploadedImageUrl ?? _existingImageUrl ?? '',
+    );
+
+    await ref.read(lostItemsProvider.notifier).updateLostItem(updated);
+    if (existing.imageUrl != updated.imageUrl) {
+      await ImageStoreService.delete(existing.imageUrl);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lost item report updated'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context, true);
+    }
+  }
+
+  Widget _photoPreview() {
+    if (_imageBytes != null) {
+      return Image.memory(
+        _imageBytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return ItemImage(
+      imageUrl: _existingImageUrl!,
+      fit: BoxFit.cover,
+      placeholder: (_) => const Center(child: CircularProgressIndicator()),
+      error: (_) => const Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textMuted),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Report Lost Item'),
+        title: Text(_isEditing ? 'Edit Lost Item' : 'Report Lost Item'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -185,18 +268,13 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
                         style: BorderStyle.solid,
                       ),
                     ),
-                    child: _imageBytes != null
+                    child: _hasPhoto
                         ? Stack(
                             fit: StackFit.expand,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.memory(
-                                  _imageBytes!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
+                                child: _photoPreview(),
                               ),
                               Positioned(
                                 top: 8,
@@ -205,6 +283,7 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
                                   onTap: () {
                                     setState(() {
                                       _imageBytes = null;
+                                      _existingImageUrl = null;
                                     });
                                   },
                                   child: Container(
@@ -365,7 +444,7 @@ class _ReportLostItemScreenState extends ConsumerState<ReportLostItemScreen> {
 
                 // Submit Button
                 CustomButton(
-                  text: 'Submit Lost Item Report',
+                  text: _isEditing ? 'Save Changes' : 'Submit Lost Item Report',
                   isLoading: _isSubmitting,
                   onPressed: _handleSubmit,
                 ),

@@ -4,17 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../item_details/presentation/item_details_screen.dart';
 
-/// Banner payload for a match notification: `notificationId|foundItemId`.
-String matchPayload(String notificationId, String foundItemId) => '$notificationId|$foundItemId';
+/// Notification types that point at a found item and raise an iOS banner.
+const foundItemNotificationTypes = {'POTENTIAL_MATCH', 'CLAIM_APPROVED', 'CLAIM_REJECTED'};
 
-/// Opens the found item from a match banner's [payload].
-Future<void> openMatchPayload(BuildContext context, WidgetRef ref, String payload) async {
+/// Banner payload for these notifications: `notificationId|foundItemId`.
+String foundItemPayload(String notificationId, String foundItemId) => '$notificationId|$foundItemId';
+
+/// Opens the found item from a banner's [payload].
+Future<void> openFoundItemPayload(BuildContext context, WidgetRef ref, String payload) async {
   final parts = payload.split('|');
   if (parts.length != 2) return;
   await openMatchedFoundItem(context, ref, notificationId: parts[0], foundItemId: parts[1]);
 }
 
-/// Marks a match notification read and opens the found item it points to.
+/// Marks a notification read and opens the found item it points to.
 Future<void> openMatchedFoundItem(
   BuildContext context,
   WidgetRef ref, {

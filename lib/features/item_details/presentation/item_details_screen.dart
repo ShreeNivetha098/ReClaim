@@ -11,6 +11,8 @@ import '../../../shared/widgets/item_image.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../matching/presentation/potential_matches_screen.dart';
 import '../../claims/presentation/ownership_verification_screen.dart';
+import '../../found_items/presentation/report_found_item_screen.dart';
+import '../../lost_items/presentation/report_lost_item_screen.dart';
 
 class ItemDetailsScreen extends ConsumerWidget {
   final LostItemModel? lostItem;
@@ -38,6 +40,10 @@ class ItemDetailsScreen extends ConsumerWidget {
     final reporterEmail = isLost ? lostItem!.reporterEmail : foundItem!.reporterEmail;
     final createdAt = isLost ? lostItem!.createdAt : foundItem!.createdAt;
     final countdownLabel = DateFormatter.getUnclaimedCountdownLabel(createdAt, status);
+    final currentUid = ref.watch(currentUserProvider)?.uid;
+    final isMine = currentUid != null &&
+        currentUid == (isLost ? lostItem!.ownerId : foundItem!.finderId);
+    final isOpen = const {'ACTIVE', 'MATCHED', 'UNCLAIMED'}.contains(status.toUpperCase());
     final displayName = reporterName != null && reporterName.trim().isNotEmpty
         ? reporterName
         : 'Unknown user';
@@ -409,8 +415,14 @@ class ItemDetailsScreen extends ConsumerWidget {
 
                   const SizedBox(height: 32),
 
-                  // Claim Item Button for Found Items
-                  if (!isLost && status.toUpperCase() == 'ACTIVE') ...[
+                  // Actions for the person who reported this item
+                  if (isMine) ...[
+                    _buildOwnerActions(context, ref, isLost: isLost, isOpen: isOpen),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Claim Item Button for Found Items (not for the finder)
+                  if (!isMine && !isLost && status.toUpperCase() == 'ACTIVE') ...[
                     CustomButton(
                       text: 'Claim This Found Item',
                       icon: Icons.assignment_turned_in_rounded,
@@ -432,6 +444,141 @@ class ItemDetailsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildOwnerActions(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isLost,
+    required bool isOpen,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (isOpen) ...[
+          CustomButton(
+            text: isLost ? 'I Got It Back' : 'Returned to Owner',
+            icon: Icons.task_alt_rounded,
+            onPressed: () => _markClosed(context, ref, isLost: isLost),
+          ),
+          const SizedBox(height: 12),
+          CustomButton(
+            text: 'Edit Report',
+            icon: Icons.edit_outlined,
+            type: CustomButtonType.outlined,
+            onPressed: () => _editReport(context, isLost: isLost),
+          ),
+          const SizedBox(height: 12),
+        ],
+        CustomButton(
+          text: 'Delete Report',
+          icon: Icons.delete_outline_rounded,
+          type: CustomButtonType.text,
+          onPressed: () => _deleteReport(context, ref, isLost: isLost),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editReport(BuildContext context, {required bool isLost}) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => isLost
+            ? ReportLostItemScreen(existingItem: lostItem)
+            : ReportFoundItemScreen(existingItem: foundItem),
+      ),
+    );
+    // This screen shows the old details, so return to the refreshed list.
+    if (saved == true && context.mounted) Navigator.pop(context);
+  }
+
+  Future<void> _markClosed(BuildContext context, WidgetRef ref, {required bool isLost}) async {
+    final confirmed = await _confirm(
+      context,
+      title: isLost ? 'Got your item back?' : 'Item returned?',
+      message: isLost
+          ? 'Your lost report will be closed and no longer matched with found items.'
+          : 'Your found report will be closed and no longer open for claims.',
+      confirmLabel: isLost ? 'Yes, I got it back' : 'Yes, it was returned',
+    );
+    if (!confirmed || !context.mounted) return;
+
+    await _runOwnerAction(
+      context,
+      () => isLost
+          ? ref.read(lostItemsProvider.notifier).markRecovered(lostItem!.id)
+          : ref.read(foundItemsProvider.notifier).markReturned(foundItem!.id),
+      successMessage: isLost ? 'Great! Report marked as recovered.' : 'Report marked as returned.',
+    );
+  }
+
+  Future<void> _deleteReport(BuildContext context, WidgetRef ref, {required bool isLost}) async {
+    final confirmed = await _confirm(
+      context,
+      title: 'Delete this report?',
+      message: 'The report and its photo will be removed. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    await _runOwnerAction(
+      context,
+      () => isLost
+          ? ref.read(lostItemsProvider.notifier).deleteOwnLostItem(lostItem!)
+          : ref.read(foundItemsProvider.notifier).deleteOwnFoundItem(foundItem!),
+      successMessage: 'Report deleted.',
+    );
+  }
+
+  Future<void> _runOwnerAction(
+    BuildContext context,
+    Future<void> Function() action, {
+    required String successMessage,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await action();
+      messenger.showSnackBar(
+        SnackBar(content: Text(successMessage), backgroundColor: AppColors.success),
+      );
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not update the report: $e'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
+  Future<bool> _confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmLabel,
+    bool destructive = false,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(
+              foregroundColor: destructive ? AppColors.error : AppColors.primary,
+            ),
+            child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
