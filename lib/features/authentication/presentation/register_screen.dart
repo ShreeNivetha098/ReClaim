@@ -34,6 +34,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   Uint8List? _idPhoto;
+  bool _showIdPhotoError = false;
 
   final List<String> _departments = [
     'Computer Science & Applications',
@@ -77,7 +78,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    if (!_formKey.currentState!.validate()) return;
+    final formValid = _formKey.currentState!.validate();
+    // Every account needs a college ID photo so an admin can verify it.
+    setState(() => _showIdPhotoError = _idPhoto == null);
+    if (_idPhoto == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please add a photo of your college ID card to sign up.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    if (!formValid) return;
 
     setState(() => _isLoading = true);
 
@@ -93,15 +106,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
 
       // The account exists now; a failed photo upload can be retried from Profile.
-      String message = 'Registration successful! Welcome to ReClaim.';
-      if (_idPhoto != null) {
-        try {
-          await ref.read(currentUserProvider.notifier).submitIdPhoto(_idPhoto!);
-          message = 'Welcome to ReClaim! Your college ID has been sent for verification.';
-        } catch (e) {
-          message = 'Welcome to ReClaim! Your ID photo could not be sent; '
-              'you can upload it again from your Profile.';
-        }
+      String message;
+      try {
+        await ref.read(currentUserProvider.notifier).submitIdPhoto(_idPhoto!);
+        message = 'Welcome to ReClaim! Your college ID has been sent for verification.';
+      } catch (e) {
+        message = 'Welcome to ReClaim! Your ID photo could not be sent; '
+            'please upload it again from your Profile.';
       }
 
       if (mounted) {
@@ -136,6 +147,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         color: Colors.white,
         borderRadius: AppStyles.borderRadiusLg,
         boxShadow: AppStyles.softShadow,
+        border: _showIdPhotoError ? Border.all(color: AppColors.error, width: 1.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +156,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               Icon(Icons.verified_user_rounded, color: AppColors.primary),
               SizedBox(width: 8),
-              Text('Get verified (optional)', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('College ID photo *', style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 6),
@@ -171,11 +183,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ? null
                   : () async {
                       final bytes = await pickIdPhoto(context);
-                      if (bytes != null && mounted) setState(() => _idPhoto = bytes);
+                      if (bytes != null && mounted) {
+                        setState(() {
+                          _idPhoto = bytes;
+                          _showIdPhotoError = false;
+                        });
+                      }
                     },
               icon: const Icon(Icons.add_a_photo_outlined),
               label: const Text('Add college ID photo'),
             ),
+          if (_showIdPhotoError) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'A college ID photo is required to sign up.',
+              style: TextStyle(fontSize: 12, color: AppColors.error),
+            ),
+          ],
         ],
       ),
     );
@@ -447,7 +471,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Optional college ID photo for account verification
+                // Required college ID photo for account verification
                 _buildIdPhotoSection(),
                 const SizedBox(height: 24),
 

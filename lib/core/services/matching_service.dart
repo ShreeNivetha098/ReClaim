@@ -19,6 +19,41 @@ class MatchingService {
   /// already add up to about 20 points.
   static const double notifyThreshold = 60.0;
 
+  /// A user's own lost and found reports scoring at or above this describe
+  /// the same item reported twice. Stricter than [notifyThreshold] so two
+  /// different items of the same kind are not mistaken for one.
+  static const double sameItemThreshold = 70.0;
+
+  static const _openStatuses = {'ACTIVE', 'MATCHED', 'UNCLAIMED'};
+
+  /// The owner's own open found report that describes [lostItem], if any.
+  static FoundItemModel? ownFoundReportOfSameItem({
+    required LostItemModel lostItem,
+    required List<FoundItemModel> foundItems,
+  }) {
+    for (final foundItem in foundItems) {
+      if (foundItem.finderId != lostItem.ownerId) continue;
+      if (!_openStatuses.contains(foundItem.status.toUpperCase())) continue;
+      final match = calculateMatch(lostItem: lostItem, foundItem: foundItem);
+      if (match.matchPercentage >= sameItemThreshold) return foundItem;
+    }
+    return null;
+  }
+
+  /// The finder's own open lost report that describes [foundItem], if any.
+  static LostItemModel? ownLostReportOfSameItem({
+    required FoundItemModel foundItem,
+    required List<LostItemModel> lostItems,
+  }) {
+    for (final lostItem in lostItems) {
+      if (lostItem.ownerId != foundItem.finderId) continue;
+      if (!_openStatuses.contains(lostItem.status.toUpperCase())) continue;
+      final match = calculateMatch(lostItem: lostItem, foundItem: foundItem);
+      if (match.matchPercentage >= sameItemThreshold) return lostItem;
+    }
+    return null;
+  }
+
   /// Calculate match percentage between a lost item and a found item
   static MatchResultModel calculateMatch({
     required LostItemModel lostItem,

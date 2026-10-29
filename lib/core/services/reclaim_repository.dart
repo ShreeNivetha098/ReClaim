@@ -17,6 +17,16 @@ import 'image_store_service.dart';
 import 'matching_service.dart';
 import '../constants/app_constants.dart';
 
+/// Thrown when a user reports an item as lost that they already reported as
+/// found, or the other way round.
+class DuplicateReportException implements Exception {
+  final String message;
+  const DuplicateReportException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ReClaimRepository {
   static const _uuid = Uuid();
 
@@ -349,6 +359,7 @@ class ReClaimRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+    await _rejectIfOwnFoundReport(newItem);
 
     if (FirebaseService.isInitialized) {
       await FirebaseService.firestore
@@ -462,6 +473,7 @@ class ReClaimRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+    await _rejectIfOwnLostReport(newItem);
 
     if (FirebaseService.isInitialized) {
       await FirebaseService.firestore
@@ -542,6 +554,7 @@ class ReClaimRepository {
 
   Future<void> updateLostItem(LostItemModel item) async {
     final updated = item.copyWith(updatedAt: DateTime.now());
+    await _rejectIfOwnFoundReport(updated);
     if (FirebaseService.isInitialized) {
       await FirebaseService.firestore
           .collection('lostItems')
@@ -561,6 +574,7 @@ class ReClaimRepository {
 
   Future<void> updateFoundItem(FoundItemModel item) async {
     final updated = item.copyWith(updatedAt: DateTime.now());
+    await _rejectIfOwnLostReport(updated);
     if (FirebaseService.isInitialized) {
       await FirebaseService.firestore
           .collection('foundItems')
@@ -997,6 +1011,37 @@ Future<void> updateClaimStatus(String claimId, String newStatus) async {
       );
     }
     _notifyMockNotificationsChanged();
+  }
+
+  // ---------------------------------------------------------------------------
+  // SAME-ITEM CHECK
+  // One person cannot report the same item as both lost and found.
+  // ---------------------------------------------------------------------------
+
+  Future<void> _rejectIfOwnFoundReport(LostItemModel lostItem) async {
+    final duplicate = MatchingService.ownFoundReportOfSameItem(
+      lostItem: lostItem,
+      foundItems: await getFoundItems(),
+    );
+    if (duplicate != null) {
+      throw DuplicateReportException(
+        'You have already reported finding "${duplicate.itemName}". '
+        'You cannot report the same item as both lost and found.',
+      );
+    }
+  }
+
+  Future<void> _rejectIfOwnLostReport(FoundItemModel foundItem) async {
+    final duplicate = MatchingService.ownLostReportOfSameItem(
+      foundItem: foundItem,
+      lostItems: await getLostItems(),
+    );
+    if (duplicate != null) {
+      throw DuplicateReportException(
+        'You have already reported losing "${duplicate.itemName}". '
+        'You cannot report the same item as both lost and found.',
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------
