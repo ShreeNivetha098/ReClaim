@@ -6,12 +6,12 @@ owners after an ownership check. One Flutter codebase builds two apps:
 
 | App | Who uses it | Platform |
 |---|---|---|
-| **ReClaim** | Students and staff: report, search, match, claim | iOS |
-| **ReClaim Admin** | Administrators: users, reports, claims, statistics | Web (Firebase Hosting) |
+| **ReClaim** | Students and staff: report, search, match, claim | iOS, and the web at <https://reclaim-app.web.app> |
+| **ReClaim Admin** | Administrators: users, reports, claims, statistics | Web at <https://reclaim-c4695.web.app> |
 
-Each build only serves its own screens: the web build opens on the admin
-login and refuses non-admin accounts, and the iOS app has no admin
-screens. The project runs entirely on the **free Firebase Spark plan**. No feature in this project requires a paid
+Each build only serves its own screens: the admin web build opens on the
+admin login and refuses non-admin accounts, and the iOS app and the user
+web build have no admin screens. The project runs entirely on the **free Firebase Spark plan**. No feature in this project requires a paid
 Firebase plan or a paid Apple Developer account.
 
 ## Features
@@ -153,17 +153,27 @@ flutter run
 > Finder information, or similar detritus not allowed"*. Keep the
 > project in a folder that iCloud doesn't sync, such as `~/Developer`.
 
-### Admin website
+### Websites
+The same code builds two sites on Firebase Hosting. A web build is the
+admin dashboard unless it is made with `--dart-define=APP=user`.
+
 ``` bash
-# Run locally in Chrome
+# Run locally in Chrome (add --dart-define=APP=user for the user app)
 flutter run -d chrome --dart-define-from-file=firebase_web.json
 
-# Build and publish to Firebase Hosting
-flutter build web --release --dart-define-from-file=firebase_web.json
-firebase deploy --only hosting --project <your-project-id>
+# Build and publish the admin dashboard
+tool/build_web.sh admin
+firebase deploy --only hosting:admin --project reclaim-c4695
+
+# Build and publish the student and staff app
+tool/build_web.sh app
+firebase deploy --only hosting:app --project reclaim-c4695
 ```
 
-The live admin dashboard is at <https://reclaim-c4695.web.app>.
+The live admin dashboard is at <https://reclaim-c4695.web.app> and the
+user app at <https://reclaim-app.web.app>. In a browser, photos are
+chosen as files and there are no iOS banners; the Alerts tab still
+updates in real time.
 
 **Use Chrome for the admin site.** Known issue: in Safari, signing in
 with a valid admin account shows "Access denied". Not yet fixed.
