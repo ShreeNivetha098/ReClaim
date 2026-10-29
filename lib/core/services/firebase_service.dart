@@ -25,7 +25,10 @@ class FirebaseService {
 
   static Future<void> initialize() async {
     try {
-      if (Firebase.apps.isNotEmpty) {
+      // On the web, Firebase.apps throws in Safari (and every iOS browser,
+      // which all use WebKit) before the Firebase JS SDK has loaded, so the
+      // check is for the iOS app only.
+      if (!kIsWeb && Firebase.apps.isNotEmpty) {
         _isFirebaseInitialized = true;
         return;
       }

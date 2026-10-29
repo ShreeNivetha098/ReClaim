@@ -175,8 +175,6 @@ user app at <https://reclaim-app.web.app>. In a browser, photos are
 chosen as files and there are no iOS banners; the Alerts tab still
 updates in real time.
 
-**Use Chrome for the admin site.** Known issue: in Safari, signing in
-with a valid admin account shows "Access denied". Not yet fixed.
 
 Always pass `--dart-define-from-file=firebase_web.json`. Without it the
 site cannot reach Firebase, and the admin login says so.
