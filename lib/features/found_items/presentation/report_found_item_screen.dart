@@ -10,6 +10,7 @@ import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 import '../../../shared/widgets/form_parts.dart';
 import '../../../shared/widgets/item_image.dart';
+import '../../../core/services/reclaim_repository.dart' show DuplicateReportException;
 
 class ReportFoundItemScreen extends ConsumerStatefulWidget {
   /// When set, the form edits this report instead of creating a new one.
@@ -187,7 +188,7 @@ class _ReportFoundItemScreenState extends ConsumerState<ReportFoundItemScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error reporting item: $e'),
+            content: Text(e is DuplicateReportException ? e.message : 'Error reporting item: $e'),
             backgroundColor: AppColors.error,
           ),
         );
