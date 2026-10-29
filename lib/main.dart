@@ -8,8 +8,9 @@ import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'core/services/firebase_service.dart';
 
-/// One codebase, two apps: the iOS build is for students and staff, and the
-/// web build is the admin dashboard (see the redirect in app_router.dart).
+/// One codebase, two apps: the iOS build (and the web build made with
+/// `--dart-define=APP=user`) is for students and staff, and the default web
+/// build is the admin dashboard (see the redirect in app_router.dart).
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -17,7 +18,7 @@ Future<void> main() async {
 
   final container = ProviderContainer();
   if (kIsWeb) {
-    // Load a saved admin session before the router decides where to go.
+    // Load a saved session before the router decides where to go.
     await container.read(repositoryProvider).checkCurrentUser();
   }
 
@@ -35,7 +36,7 @@ class ReClaimApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: kIsWeb ? '${AppStrings.appName} Admin' : AppStrings.appName,
+      title: kIsWeb && !isUserWebBuild ? '${AppStrings.appName} Admin' : AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: appRouter,

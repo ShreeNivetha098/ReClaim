@@ -18,10 +18,15 @@ import '../../features/admin/presentation/pages/admin_claims_page.dart';
 import '../../features/admin/presentation/pages/admin_unclaimed_page.dart';
 import '../../features/admin/presentation/pages/admin_verification_page.dart';
 
-/// True for the admin dashboard (the web build); false for the student and
-/// staff app (iOS). Each build only serves its own screens.
+/// True for the web build of the student and staff app, made with
+/// `--dart-define=APP=user` (see tool/build_web.sh).
+const bool isUserWebBuild = String.fromEnvironment('APP') == 'user';
+
+/// True for the admin dashboard (the default web build); false for the
+/// student and staff app (iOS or the user web build). Each build only serves
+/// its own screens.
 @visibleForTesting
-bool isAdminBuild = kIsWeb;
+bool isAdminBuild = kIsWeb && !isUserWebBuild;
 
 final GoRouter appRouter = GoRouter(
   initialLocation: isAdminBuild ? AppRoutes.adminLogin : AppRoutes.splash,
