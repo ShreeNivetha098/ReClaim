@@ -8,6 +8,7 @@ import '../../../shared/widgets/custom_card.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../claims/presentation/ownership_verification_screen.dart';
+import '../../item_details/presentation/item_details_screen.dart';
 
 class PotentialMatchesScreen extends ConsumerWidget {
   final LostItemModel lostItem;
@@ -19,9 +20,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
     final matches = ref.watch(potentialMatchesProvider(lostItem));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Possible matches'),
-      ),
+      appBar: AppBar(title: const Text('Possible matches')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -45,11 +44,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       const Text(
                         'Your lost item',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),
@@ -73,11 +68,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
               children: [
                 const Text(
                   'Potential Matches',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -87,11 +78,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
                   ),
                   child: Text(
                     matches.length == 1 ? '1 match' : '${matches.length} matches',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accentDark,
-                    ),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.accentDark),
                   ),
                 ),
               ],
@@ -129,105 +116,76 @@ class PotentialMatchesScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Score Badge Box
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: badgeColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${score.toStringAsFixed(0)}%',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const Text(
-                                      'MATCH',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-
-                              // Found Item Info
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      found.itemName,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Found at ${found.locationFound}',
-                                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      found.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          const Divider(height: 1),
-                          const SizedBox(height: 10),
-
-                          // Attribute Scores Breakdown
-                          const Text(
-                            'Attribute Score Breakdown:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary,
+                          // Tapping the match opens the found item's full report
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ItemDetailsScreen(foundItem: found)),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: match.attributeScores.entries.map((e) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.background,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.divider),
-                                ),
-                                child: Text(
-                                  '${e.key}: ${e.value.toStringAsFixed(0)}pt',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Score Badge Box
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    children: [
+                                      const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${score.toStringAsFixed(0)}%',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const Text(
+                                        'MATCH',
+                                        style: TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            }).toList(),
+                                const SizedBox(width: 14),
+
+                                // Found Item Info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        found.itemName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Found at ${found.locationFound}',
+                                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        found.description,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 16),
 
@@ -239,10 +197,7 @@ class PotentialMatchesScreen extends ConsumerWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => OwnershipVerificationScreen(
-                                    foundItem: found,
-                                    lostItem: lostItem,
-                                  ),
+                                  builder: (_) => OwnershipVerificationScreen(foundItem: found, lostItem: lostItem),
                                 ),
                               );
                             },

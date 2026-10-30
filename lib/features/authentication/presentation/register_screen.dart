@@ -242,7 +242,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Full Name
                 CustomTextField(
                   label: 'Full Name',
-                  hint: 'e.g. Ananya Verma',
                   controller: _nameController,
                   prefixIcon: const Icon(Icons.person_outline_rounded),
                   validator: (val) => val == null || val.trim().isEmpty ? 'Please enter your full name' : null,
@@ -252,7 +251,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Institutional Email
                 CustomTextField(
                   label: 'Institutional Email',
-                  hint: 'student@psgtech.ac.in',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: const Icon(Icons.email_outlined),
@@ -275,7 +273,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Phone Number
                 CustomTextField(
                   label: 'Phone Number',
-                  hint: '+91 9876543210',
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   prefixIcon: const Icon(Icons.phone_outlined),
@@ -427,7 +424,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Roll Number / Staff ID
                 CustomTextField(
                   label: _selectedRole == 'Student' ? 'Roll / Register Number' : 'Employee ID',
-                  hint: _selectedRole == 'Student' ? 'e.g. MCA-2026-042' : 'e.g. EMP-904',
                   controller: _rollNumberController,
                   prefixIcon: const Icon(Icons.numbers_rounded),
                   validator: (val) => val == null || val.trim().isEmpty ? 'Please enter Roll/ID number' : null,
@@ -437,7 +433,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Password
                 CustomTextField(
                   label: 'Password',
-                  hint: '••••••••',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -456,7 +451,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Confirm Password
                 CustomTextField(
                   label: 'Confirm Password',
-                  hint: '••••••••',
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   prefixIcon: const Icon(Icons.lock_reset_rounded),
