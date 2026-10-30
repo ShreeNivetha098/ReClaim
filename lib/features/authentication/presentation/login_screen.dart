@@ -100,7 +100,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Email Field
                   CustomTextField(
                     label: 'Institutional Email',
-                    hint: 'student@psgtech.ac.in',
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: const Icon(Icons.email_outlined),
@@ -123,7 +122,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Password Field
                   CustomTextField(
                     label: 'Password',
-                    hint: '••••••••',
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
